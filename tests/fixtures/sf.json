@@ -1,0 +1,33 @@
+[
+    {
+        "citation_number": "968431321",
+        "citation_issued_datetime": "2025-06-03T15:18:00.000",
+        "violation": "TRC7.2.40",
+        "violation_desc": "PRK PROHIB",
+        "citation_location": "330 JACKSON ST",
+        "vehicle_plate_state": "CA",
+        "fine_amount": "108.0",
+        "latitude": "37.79689500000100",
+        "longitude": "-122.4010800000020"
+    },
+    {
+        "citation_number": "968431332",
+        "citation_issued_datetime": "2025-06-03T15:24:00.000",
+        "violation": "TRC7.2.41",
+        "violation_desc": "PK PHB OTD",
+        "citation_location": "10 ICEHOUSE ALY",
+        "vehicle_plate_state": "CA",
+        "fine_amount": "108.0",
+        "latitude": "37.80053056090000",
+        "longitude": "-122.4020239115070"
+    },
+    {
+        "citation_number": "PD34810300",
+        "citation_issued_datetime": "2025-06-03T15:09:00.000",
+        "violation": "TRC7.2.40",
+        "violation_desc": "PRK PROHIB",
+        "citation_location": "SPARROW STREET/CALEDONZA",
+        "vehicle_plate_state": "CA",
+        "fine_amount": "108.0"
+    }
+]

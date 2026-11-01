@@ -1,0 +1,27 @@
+name = "Philadelphia"
+slug = "philadelphia"
+portal = "carto"
+host = "phl.carto.com"
+dataset = "parking_violations"
+date_field = "issue_datetime"
+# No code column; groups.csv lists the description text instead.
+group_by = "violation_text"
+source_url = "https://opendataphilly.org/datasets/parking-violations/"
+license = "check on portal page"
+# The published table covers 2012 to 2017 only.
+first_day = "2012-01-01"
+last_day = "2017-12-31"
+
+[columns]  # our column = city column
+source_id = "anon_ticket_number"
+violation_text = "violation_desc"
+fine_usd = "fine"
+location = "location"
+lat = "lat"
+lon = "lon"
+plate_state = "state"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [39.86, 40.14]
+lon = [-75.29, -74.95]

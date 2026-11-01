@@ -2,14 +2,33 @@
 name = "parking-tickets"
 version = "0.1.0"
 description = "Parking tickets from many US cities in one schema, cached in SQLite"
+keywords = ["parking", "tickets", "citations", "open-data", "socrata", "pandas"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
 readme = "README.md"
 authors = [
     { name = "ivanvia7", email = "ivanvia76@gmail.com" }
 ]
 license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.28.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/ivanvia7/parking-tickets"
+Changelog = "https://github.com/ivanvia7/parking-tickets/blob/main/CHANGELOG.md"
+Cities = "https://github.com/ivanvia7/parking-tickets/blob/main/CITIES.md"
+
+[project.optional-dependencies]
+parquet = ["duckdb>=1.5.6"]
+pandas = [
+    "pandas>=3.1.0",
 ]
 
 [project.scripts]
@@ -22,7 +41,15 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "duckdb>=1.5.6",
+    "pandas>=3.1.0",
     "pytest>=9.2.0",
     "respx>=0.23.1",
     "ruff>=0.17.3",
 ]
+
+[tool.ruff.lint]
+# Defaults plus bugbear, import order, pyupgrade, simplify, pylint and naming rules.
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "C4", "RUF", "PIE", "RET", "PTH", "PL", "N"]
+# pandas and duckdb are optional extras, imported only where they are used.
+# The formatter owns line length; plain numbers like 12 months read better than names.
+ignore = ["PLC0415", "E501", "PLR2004"]

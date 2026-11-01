@@ -1,0 +1,23 @@
+name: city-check
+on:
+  pull_request:
+    paths: ["src/parking_tickets/cities/**"]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - name: Read 100 live rows of every changed city
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed=$(git diff --name-only --diff-filter=AMR "$BASE" HEAD -- 'src/parking_tickets/cities/*.toml')
+          status=0
+          for file in $changed; do
+            uv run parking-tickets check-city "$(basename "$file" .toml)" || status=1
+          done
+          exit $status

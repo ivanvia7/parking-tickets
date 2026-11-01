@@ -1,0 +1,86 @@
+[
+    {
+        "ticket_number": "4604320910",
+        "issue_date": "2025-06-03T00:00:00.000",
+        "issue_time": "1018",
+        "marked_time": "0000",
+        "rp_state_plate": "CA",
+        "plate_expiry_date": "202511",
+        "make": "HOND",
+        "body_style": "PA",
+        "color": "SL",
+        "location": "11151 LAUREL CYN BL",
+        "agency": "53",
+        "violation_code": "80.69BS",
+        "violation_description": "NO PARK/STREET CLEAN",
+        "fine_amount": "73",
+        "agency_desc": "53 - DOT - VALLEY",
+        "color_desc": "SILVER",
+        "body_style_desc": "PASSENGER CAR",
+        "loc_lat": "34.2732771",
+        "loc_long": "-118.447692",
+        "geocodelocation": {
+            "type": "Point",
+            "coordinates": [
+                -118.447692,
+                34.2732771
+            ]
+        }
+    },
+    {
+        "ticket_number": "4604166545",
+        "issue_date": "2025-06-03T00:00:00.000",
+        "issue_time": "1023",
+        "marked_time": "0000",
+        "rp_state_plate": "CA",
+        "plate_expiry_date": "202210",
+        "make": "INFI",
+        "body_style": "PA",
+        "color": "SL",
+        "location": "6500 HARVARD BL",
+        "agency": "55",
+        "violation_code": "80.69BS",
+        "violation_description": "NO PARK/STREET CLEAN",
+        "fine_amount": "73",
+        "agency_desc": "55 - DOT - SOUTHERN",
+        "color_desc": "SILVER",
+        "body_style_desc": "PASSENGER CAR",
+        "loc_lat": "33.97927412",
+        "loc_long": "-118.30672823",
+        "geocodelocation": {
+            "type": "Point",
+            "coordinates": [
+                -118.30672823,
+                33.97927412
+            ]
+        }
+    },
+    {
+        "ticket_number": "4604197710",
+        "issue_date": "2025-06-03T00:00:00.000",
+        "issue_time": "2211",
+        "marked_time": "0000",
+        "rp_state_plate": "CA",
+        "plate_expiry_date": "0",
+        "make": "TSMR",
+        "body_style": "PA",
+        "color": "BL",
+        "location": "16626 ARMINTA ST",
+        "agency": "53",
+        "violation_code": "80.69AP+",
+        "violation_description": "NO STOP/STANDING",
+        "fine_amount": "93",
+        "agency_desc": "53 - DOT - VALLEY",
+        "color_desc": "BLUE",
+        "body_style_desc": "PASSENGER CAR",
+        "loc_lat": "34.21483698",
+        "loc_long": "-118.49554409",
+        "geocodelocation": {
+            "type": "Point",
+            "coordinates": [
+                -118.49554409,
+                34.21483698
+            ]
+        }
+    }
+]

@@ -1,0 +1,58 @@
+name: publish
+on:
+  schedule:
+    - cron: "0 5 2 * *"  # the 2nd of every month
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      jobs: ${{ steps.plan.outputs.jobs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - id: plan
+        run: echo "jobs=$(uv run python scripts/publish.py plan)" >> "$GITHUB_OUTPUT"
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      # Each job keeps 1 request a second per portal; few jobs at once keeps portals calm.
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.jobs) }}
+    env:
+      SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - run: uv run python scripts/publish.py build ${{ matrix.city }} ${{ matrix.since }} ${{ matrix.until }} out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.city }}-${{ matrix.since }}
+          path: out/
+          retention-days: 3
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - run: uv run python scripts/publish.py manifest out
+      - name: Create the data-YYYY-MM release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="data-$(date -u +%Y-%m)"
+          gh release create "$tag" out/* --title "$tag" \
+            --notes "Parking tickets per city and year. Row counts and SHA-256 in MANIFEST.json."

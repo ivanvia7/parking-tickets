@@ -1,0 +1,25 @@
+name = "San Francisco"
+slug = "sf"
+portal = "socrata"
+host = "data.sf.gov"
+dataset = "ab4h-6ztd"
+date_field = "citation_issued_datetime"
+source_url = "https://data.sf.gov/d/ab4h-6ztd"
+license = "check on portal page"
+# Published files start here; earlier dates are a few typo tickets.
+first_day = "2008-01-01"
+
+[columns]  # our column = city column
+source_id = "citation_number"
+violation_code = "violation"
+violation_text = "violation_desc"
+fine_usd = "fine_amount"
+location = "citation_location"
+lat = "latitude"
+lon = "longitude"
+plate_state = "vehicle_plate_state"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [37.70, 37.84]
+lon = [-122.52, -122.35]

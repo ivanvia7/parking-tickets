@@ -1,0 +1,27 @@
+name = "Los Angeles"
+slug = "la"
+portal = "socrata"
+host = "data.lacity.org"
+dataset = "4f5p-udkv"
+date_field = "issue_date"
+time_field = "issue_time"
+time_format = "hmm"
+source_url = "https://data.lacity.org/d/4f5p-udkv"
+license = "check on portal page"
+# Published files start here; earlier dates are a few typo tickets.
+first_day = "2013-01-01"
+
+[columns]  # our column = city column
+source_id = "ticket_number"
+violation_code = "violation_code"
+violation_text = "violation_description"
+fine_usd = "fine_amount"
+location = "location"
+lat = "loc_lat"
+lon = "loc_long"
+plate_state = "rp_state_plate"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [33.70, 34.34]
+lon = [-118.67, -118.15]

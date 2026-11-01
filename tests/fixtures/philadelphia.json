@@ -1,0 +1,32 @@
+[
+  {
+    "issue_datetime": "2017-06-06T10:27:00Z",
+    "anon_ticket_number": 8098636,
+    "violation_desc": "SCHOOL ZONE",
+    "fine": 36,
+    "location": "400 W NEDRO AVE",
+    "lat": 40.040972,
+    "lon": -75.128777,
+    "state": "PA"
+  },
+  {
+    "issue_datetime": "2017-06-06T09:20:00Z",
+    "anon_ticket_number": 8098667,
+    "violation_desc": "METER EXPIRED CC",
+    "fine": 36,
+    "location": "300 CHESTNUT ST",
+    "lat": 39.948678,
+    "lon": -75.14647,
+    "state": "PA"
+  },
+  {
+    "issue_datetime": "2017-06-06T08:40:00Z",
+    "anon_ticket_number": 8098740,
+    "violation_desc": "DOUBLE PARKED",
+    "fine": 51,
+    "location": "1200 N NEWKI",
+    "lat": null,
+    "lon": null,
+    "state": "PA"
+  }
+]
