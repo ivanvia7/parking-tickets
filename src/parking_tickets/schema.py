@@ -58,7 +58,7 @@ def to_ticket(city: dict, row: dict) -> Ticket:
 
     return Ticket(
         city=city["slug"],
-        source_id=row[col["source_id"]],
+        source_id=str(row[col["source_id"]]),
         issued_at=issued_at(city, row),
         violation_code=text("violation_code"),
         violation_text=text("violation_text"),

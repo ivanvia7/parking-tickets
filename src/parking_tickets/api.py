@@ -5,10 +5,10 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from parking_tickets import cache, cities
-from parking_tickets.portals import socrata
+from parking_tickets.portals import carto, socrata
 from parking_tickets.schema import to_ticket
 
-PORTALS = {"socrata": socrata.read_day}
+PORTALS = {"socrata": socrata.read_day, "carto": carto.read_day}
 
 
 def default_cache_path() -> Path:

@@ -1,0 +1,18 @@
+name = "Philadelphia"
+slug = "philadelphia"
+portal = "carto"
+host = "phl.carto.com"
+dataset = "parking_violations"
+date_field = "issue_datetime"
+source_url = "https://opendataphilly.org/datasets/parking-violations/"
+license = "check on portal page"
+# The published table covers 2012 to 2017 only.
+
+[columns]  # our column = city column
+source_id = "anon_ticket_number"
+violation_text = "violation_desc"
+fine_usd = "fine"
+location = "location"
+lat = "lat"
+lon = "lon"
+plate_state = "state"
