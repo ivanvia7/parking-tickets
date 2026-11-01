@@ -68,3 +68,15 @@ def sample(city: dict, columns: list[str], limit: int) -> list[dict]:
         f" WHERE {city['date_field']} IS NOT NULL ORDER BY {city['date_field']} DESC LIMIT {limit}"
     )
     return query(city["host"], sql)
+
+
+def summary(city: dict) -> tuple[int, str | None, str | None]:
+    """Rows and first and last ticket date of the table, future typos left out."""
+    field = city["date_field"]
+    sql = (
+        f"SELECT count(*) AS n, min({field}) AS first, max({field}) AS last"
+        f" FROM {city['dataset']} WHERE {field} <= now()"
+    )
+    (row,) = query(city["host"], sql)
+    first, last = row.get("first"), row.get("last")
+    return int(row["n"]), first and first[:10], last and last[:10]

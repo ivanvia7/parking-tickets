@@ -99,3 +99,29 @@ def sample(city: dict, columns: list[str], limit: int) -> list[dict]:
         "$limit": str(limit),
     }
     return get_json(resource_url(city["host"], dataset), params, auth_headers())
+
+
+def all_datasets(city: dict) -> list[str]:
+    if "dataset" in city:
+        return [city["dataset"]]
+    return list(city["datasets_by_fiscal_year"].values())
+
+
+def summary(city: dict) -> tuple[int, str | None, str | None]:
+    """Rows and first and last ticket date over all the city's datasets.
+
+    Tickets dated after today are typos and are left out of the dates.
+    """
+    field = city["date_field"]
+    params = {
+        "$select": f"count(*) AS n, min({field}) AS first, max({field}) AS last",
+        "$where": f"{field} < '{date.today() + timedelta(days=1)}T00:00:00'",
+    }
+    total, firsts, lasts = 0, [], []
+    for dataset in all_datasets(city):
+        url = resource_url(city["host"], dataset)
+        (row,) = get_json(url, params, auth_headers())
+        total += int(row["n"])
+        firsts += [row["first"][:10]] if row.get("first") else []
+        lasts += [row["last"][:10]] if row.get("last") else []
+    return total, min(firsts, default=None), max(lasts, default=None)
