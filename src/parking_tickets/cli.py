@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from importlib.metadata import version
 from pathlib import Path
 
-from parking_tickets import api, cache
+from parking_tickets import api, cache, export
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,14 +22,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="last day to fetch, default yesterday",
     )
     fetch.add_argument("--cache", type=Path, default=api.default_cache_path())
+    fetch.add_argument(
+        "--out", type=Path, help="write the rows to .csv, .jsonl, .db or .parquet"
+    )
     return parser
 
 
 def run_fetch(args: argparse.Namespace) -> None:
+    slugs = [s.strip() for s in args.city.split(",")]
     conn = cache.open_cache(args.cache)
-    for slug in args.city.split(","):
-        rows = api.fetch(conn, slug.strip(), args.since, args.until)
+    for slug in slugs:
+        rows = api.fetch(conn, slug, args.since, args.until)
         print(f"{slug}: {rows} new rows")
+    if args.out:
+        since, until = args.since.isoformat(), args.until.isoformat()
+        export.export(conn, slugs, since, until, args.out)
+        print(f"wrote {args.out}")
 
 
 def main() -> None:
