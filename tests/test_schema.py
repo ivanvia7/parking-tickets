@@ -29,3 +29,11 @@ def test_unknown_city_names_known_ones():
         assert "la" in str(error)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_sf_rows_map_to_schema():
+    city = cities.load("sf")
+    rows = json.loads((FIXTURES / "sf.json").read_text())
+    tickets = [to_ticket(city, row) for row in rows]
+    assert all(t.fine_usd is not None for t in tickets)
+    assert all(t.issued_at.startswith("2025-06-03T") for t in tickets)
