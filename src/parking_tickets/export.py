@@ -5,6 +5,7 @@ import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
+from parking_tickets.cache import SCHEMA
 from parking_tickets.schema import COLUMNS
 
 PARQUET_TYPES = {"fine_usd": "DOUBLE", "lat": "DOUBLE", "lon": "DOUBLE"}
@@ -37,8 +38,6 @@ def to_jsonl(rows: Iterator[tuple], path: Path) -> None:
 
 
 def to_sqlite(rows: Iterator[tuple], path: Path) -> None:
-    from parking_tickets.cache import SCHEMA
-
     path.unlink(missing_ok=True)
     out = sqlite3.connect(path)
     marks = ", ".join("?" for _ in COLUMNS)

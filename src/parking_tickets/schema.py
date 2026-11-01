@@ -33,9 +33,11 @@ def coordinate(value: object) -> float | None:
     return None if parsed == 0 else parsed
 
 
-def hmm_time(value: str) -> str:
-    """'904' -> '09:04'"""
+def hmm_time(value: str) -> str | None:
+    """'904' -> '09:04'; None when the city wrote something unreadable."""
     digits = value.zfill(4)
+    if not re.fullmatch(r"([01]\d|2[0-3])[0-5]\d", digits):
+        return None
     return f"{digits[:2]}:{digits[2:]}"
 
 
@@ -86,7 +88,7 @@ def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
     def text(name: str) -> str | None:
         return column_text(row, col.get(name))
 
-    fine = fine_from_table(city, fines, row) if fines else text("fine_usd")
+    fine = fine_from_table(city, fines, row) if fines is not None else text("fine_usd")
 
     return Ticket(
         city=city["slug"],

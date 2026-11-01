@@ -11,6 +11,8 @@ def test_hmm_time_pads_short_values():
     assert hmm_time("904") == "09:04"
     assert hmm_time("0") == "00:00"
     assert hmm_time("2358") == "23:58"
+    assert hmm_time("2400") is None
+    assert hmm_time("9999") is None
 
 
 def test_la_rows_map_to_schema():

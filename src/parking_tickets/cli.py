@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from importlib.metadata import version
 from pathlib import Path
 
-from parking_tickets import api, cache, export
+from parking_tickets import api, cache, cities, export
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,15 +33,29 @@ def run_fetch(args: argparse.Namespace) -> None:
     conn = cache.open_cache(args.cache)
     for slug in slugs:
         rows = api.fetch(conn, slug, args.since, args.until)
-        print(f"{slug}: {rows} new rows")
+        print(f"{slug}: {rows} rows read")
     if args.out:
         since, until = args.since.isoformat(), args.until.isoformat()
         export.export(conn, slugs, since, until, args.out)
         print(f"wrote {args.out}")
 
 
-def main() -> None:
-    args = build_parser().parse_args()
+def check_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    """Fail before any download, not after a long fetch."""
     if args.since > args.until:
-        raise SystemExit("--since is after --until")
+        parser.error("--since is after --until")
+    known = cities.slugs()
+    unknown = {s.strip() for s in args.city.split(",")} - set(known)
+    if unknown:
+        parser.error(
+            f"unknown city {', '.join(sorted(unknown))}; known: {', '.join(known)}"
+        )
+    if args.out and args.out.suffix not in export.WRITERS:
+        parser.error(f"--out must end with one of {', '.join(export.WRITERS)}")
+
+
+def main() -> None:
+    parser = build_parser()
+    args = parser.parse_args()
+    check_args(parser, args)
     run_fetch(args)

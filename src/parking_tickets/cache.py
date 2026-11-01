@@ -27,24 +27,25 @@ def open_cache(path: Path) -> sqlite3.Connection:
 
 
 def save_day(
-    conn: sqlite3.Connection, city: str, day: str, tickets: Iterable[Ticket]
+    conn: sqlite3.Connection,
+    city: str,
+    day: str,
+    tickets: Iterable[Ticket],
+    settled: bool,
 ) -> int:
+    """Store a day's tickets; only a settled day is skipped by later fetches."""
     rows = [astuple(t) for t in tickets]
     marks = ", ".join("?" for _ in COLUMNS)
     with conn:
         conn.executemany(f"INSERT OR REPLACE INTO tickets VALUES ({marks})", rows)
-        conn.execute(
-            "INSERT OR REPLACE INTO fetched_days VALUES (?, ?, ?)",
-            (city, day, len(rows)),
-        )
+        if settled:
+            conn.execute(
+                "INSERT OR REPLACE INTO fetched_days VALUES (?, ?, ?)",
+                (city, day, len(rows)),
+            )
     return len(rows)
 
 
 def is_fetched(conn: sqlite3.Connection, city: str, day: str) -> bool:
     query = "SELECT 1 FROM fetched_days WHERE city = ? AND day = ?"
     return conn.execute(query, (city, day)).fetchone() is not None
-
-
-def last_day(conn: sqlite3.Connection, city: str) -> str | None:
-    query = "SELECT max(day) FROM fetched_days WHERE city = ?"
-    return conn.execute(query, (city,)).fetchone()[0]

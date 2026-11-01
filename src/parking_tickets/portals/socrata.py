@@ -1,5 +1,6 @@
 import os
 from collections.abc import Iterator
+from datetime import date, timedelta
 
 from parking_tickets.portals.http import get_json
 
@@ -40,7 +41,8 @@ def read(
 
 
 def day_filter(date_field: str, day: str) -> str:
-    return f"{date_field} >= '{day}T00:00:00' AND {date_field} < '{day}T23:59:59.999'"
+    next_day = (date.fromisoformat(day) + timedelta(days=1)).isoformat()
+    return f"{date_field} >= '{day}T00:00:00' AND {date_field} < '{next_day}T00:00:00'"
 
 
 def fiscal_year(day: str, start_month: int) -> int:

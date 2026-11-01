@@ -15,7 +15,9 @@ FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "la.json").read_text(
 def conn(tmp_path: Path) -> sqlite3.Connection:
     conn = cache.open_cache(tmp_path / "c.db")
     city = cities.load("la")
-    cache.save_day(conn, "la", "2025-06-03", (to_ticket(city, r) for r in FIXTURE))
+    cache.save_day(
+        conn, "la", "2025-06-03", (to_ticket(city, r) for r in FIXTURE), True
+    )
     return conn
 
 
