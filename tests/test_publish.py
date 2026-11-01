@@ -53,7 +53,7 @@ def test_build_and_manifest_rows_match(tmp_path, monkeypatch):
 
 
 def test_manifest_of_empty_or_missing_dir_fails(tmp_path):
-    with pytest.raises(SystemExit, match="no .parquet"):
+    with pytest.raises(SystemExit, match=r"no \.parquet"):
         publish.manifest(tmp_path)
     with pytest.raises(FileNotFoundError):
         publish.manifest(tmp_path / "none")

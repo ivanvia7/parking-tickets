@@ -34,7 +34,10 @@ def to_csv(rows: Iterator[tuple], path: Path) -> None:
 def to_jsonl(rows: Iterator[tuple], path: Path) -> None:
     with path.open("w", encoding="utf-8") as file:
         for row in rows:
-            file.write(json.dumps(dict(zip(COLUMNS, row)), ensure_ascii=False) + "\n")
+            file.write(
+                json.dumps(dict(zip(COLUMNS, row, strict=True)), ensure_ascii=False)
+                + "\n"
+            )
 
 
 def to_sqlite(rows: Iterator[tuple], path: Path) -> None:

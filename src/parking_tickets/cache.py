@@ -65,4 +65,6 @@ STATS_COLUMNS = ("city", "rows", "first_day", "last_day", "with_lat_lon", "in_ot
 
 def city_stats(conn: sqlite3.Connection) -> list[dict]:
     """Rows, date range and the share with lat/lon and in `other`, per city."""
-    return [dict(zip(STATS_COLUMNS, row)) for row in conn.execute(STATS_QUERY)]
+    return [
+        dict(zip(STATS_COLUMNS, row, strict=True)) for row in conn.execute(STATS_QUERY)
+    ]

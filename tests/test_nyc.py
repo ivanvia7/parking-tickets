@@ -32,7 +32,7 @@ def test_fine_comes_from_code_table_by_zone():
         for row in ROWS
     }
     tickets = [to_ticket(city, row, table) for row in ROWS]
-    for row, ticket in zip(ROWS, tickets):
+    for row, ticket in zip(ROWS, tickets, strict=True):
         midtown = row.get("violation_precinct") in city["fine_lookup"]["zone_values"]
         assert ticket.fine_usd == (65.0 if midtown else 35.0)
         assert ticket.location and ticket.issued_at.startswith("2025-06-03")

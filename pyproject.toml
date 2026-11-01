@@ -46,3 +46,10 @@ dev = [
     "respx>=0.23.1",
     "ruff>=0.17.3",
 ]
+
+[tool.ruff.lint]
+# Defaults plus bugbear, import order, pyupgrade, simplify, pylint and naming rules.
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "C4", "RUF", "PIE", "RET", "PTH", "PL", "N"]
+# pandas and duckdb are optional extras, imported only where they are used.
+# The formatter owns line length; plain numbers like 12 months read better than names.
+ignore = ["PLC0415", "E501", "PLR2004"]
