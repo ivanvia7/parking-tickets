@@ -2,15 +2,28 @@
 name = "parking-tickets"
 version = "0.1.0"
 description = "Parking tickets from many US cities in one schema, cached in SQLite"
+keywords = ["parking", "tickets", "citations", "open-data", "socrata", "pandas"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
 readme = "README.md"
 authors = [
     { name = "ivanvia7", email = "ivanvia76@gmail.com" }
 ]
 license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.28.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ivanvia7/parking-tickets"
+Changelog = "https://github.com/ivanvia7/parking-tickets/blob/main/CHANGELOG.md"
+Cities = "https://github.com/ivanvia7/parking-tickets/blob/main/CITIES.md"
 
 [project.optional-dependencies]
 parquet = ["duckdb>=1.5.6"]

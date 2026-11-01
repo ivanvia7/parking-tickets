@@ -4,6 +4,14 @@ Parking tickets from many US cities in one table: same columns, same violation g
 
 Today: Los Angeles, New York City, San Francisco and Philadelphia, over 240 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
 
+```
+$ parking-tickets fetch --city la,sf,nyc --since 2025-06-03 --until 2025-06-03
+$ parking-tickets stats
+la: 7886 rows, 2025-06-03 to 2025-06-03, 99.9% with lat/lon, 3.8% in other
+nyc: 53907 rows, 2025-06-03 to 2025-06-03, 0.0% with lat/lon, 2.6% in other
+sf: 5158 rows, 2025-06-03 to 2025-06-03, 98.3% with lat/lon, 3.4% in other
+```
+
 ## Three ways in
 
 **Notebook**
@@ -53,6 +61,7 @@ The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`,
 ## Good to know
 
 - New York's data includes school-zone speed camera and red-light camera tickets (a third of NYC rows in June 2025); filter on `group`.
+- New York publishes no coordinates; `lat` and `lon` are empty there, `location` has house number and street.
 - San Francisco's data includes Muni fare evasion citations, group `transit_fare`.
 - Philadelphia publishes 2012 to 2017 only and has no violation code; its groups come from the description text.
 - New York fines come from the city's violation code table; tickets in Manhattan at or below 96th St get the higher fine, matched by police precinct.

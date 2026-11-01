@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 - 2026-11-01
+
+First release.
 
 ### Added
 - Cities: Los Angeles, New York City (fiscal-year datasets, fines from the city's code table), San Francisco, Philadelphia (2012 to 2017).
