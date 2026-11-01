@@ -8,14 +8,15 @@ URL = "https://data.lacity.org/resource/4f5p-udkv.json"
 
 
 @respx.mock
-def test_read_pages_until_short_page():
+def test_read_pages_until_short_page(monkeypatch):
+    monkeypatch.setattr(socrata, "PAGE_SIZE", 2)
     route = respx.get(URL).mock(
         side_effect=[
             httpx.Response(200, json=[{"n": 1}, {"n": 2}]),
             httpx.Response(200, json=[{"n": 3}]),
         ]
     )
-    rows = list(socrata.read("data.lacity.org", "4f5p-udkv", "1=1", page_size=2))
+    rows = list(socrata.read("data.lacity.org", "4f5p-udkv", "1=1"))
     assert [r["n"] for r in rows] == [1, 2, 3]
     assert route.calls[1].request.url.params["$offset"] == "2"
 

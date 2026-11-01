@@ -16,22 +16,22 @@ def resource_url(host: str, dataset: str) -> str:
     return f"https://{host}/resource/{dataset}.json"
 
 
-def read(
-    host: str, dataset: str, where: str, page_size: int = PAGE_SIZE
-) -> Iterator[dict]:
+def read(host: str, dataset: str, where: str) -> Iterator[dict]:
     offset = 0
+
     while True:
         params = {
             "$where": where,
             "$order": ":id",
-            "$limit": str(page_size),
+            "$limit": str(PAGE_SIZE),
             "$offset": str(offset),
         }
         page = get_json(resource_url(host, dataset), params, auth_headers())
         yield from page
-        if len(page) < page_size:
+
+        if len(page) < PAGE_SIZE:
             return
-        offset += page_size
+        offset += PAGE_SIZE
 
 
 def span_filter(date_field: str, since: str, until: str) -> str:

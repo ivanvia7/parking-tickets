@@ -20,27 +20,22 @@ def query(host: str, sql: str) -> list[dict]:
     return get_json(sql_url(host), {"q": sql}, {})["rows"]
 
 
-def read(
-    host: str, table: str, columns: list[str], where: str, page_size: int = PAGE_SIZE
-) -> Iterator[dict]:
-    select = ", ".join(columns)
+def read_day(city: dict, day: str) -> Iterator[dict]:
+    select = ", ".join([city["date_field"], *city["columns"].values()])
+    where = span_filter(city["date_field"], day, day)
     offset = 0
+
     while True:
         sql = (
-            f"SELECT {select} FROM {table} WHERE {where}"
-            f" ORDER BY cartodb_id LIMIT {page_size} OFFSET {offset}"
+            f"SELECT {select} FROM {city['dataset']} WHERE {where}"
+            f" ORDER BY cartodb_id LIMIT {PAGE_SIZE} OFFSET {offset}"
         )
-        page = query(host, sql)
+        page = query(city["host"], sql)
         yield from page
-        if len(page) < page_size:
+
+        if len(page) < PAGE_SIZE:
             return
-        offset += page_size
-
-
-def read_day(city: dict, day: str) -> Iterator[dict]:
-    columns = [city["date_field"], *city["columns"].values()]
-    where = span_filter(city["date_field"], day, day)
-    return read(city["host"], city["dataset"], columns, where)
+        offset += PAGE_SIZE
 
 
 def count_by(city: dict, column: str, since: str, until: str) -> dict[str | None, int]:
