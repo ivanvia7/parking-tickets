@@ -8,6 +8,8 @@ time_format = "hhmmp"
 fiscal_year_start_month = 7
 source_url = "https://data.cityofnewyork.us/browse?q=parking%20violations%20issued"
 license = "check on portal page"
+# Published files start here; earlier dates are a few typo tickets.
+first_day = "2013-07-01"
 
 [datasets_by_fiscal_year]  # one dataset per fiscal year, July to June
 2014 = "jt7v-77mi"

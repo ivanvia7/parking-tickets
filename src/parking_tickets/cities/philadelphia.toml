@@ -9,6 +9,8 @@ group_by = "violation_text"
 source_url = "https://opendataphilly.org/datasets/parking-violations/"
 license = "check on portal page"
 # The published table covers 2012 to 2017 only.
+first_day = "2012-01-01"
+last_day = "2017-12-31"
 
 [columns]  # our column = city column
 source_id = "anon_ticket_number"

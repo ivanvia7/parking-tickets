@@ -9,3 +9,4 @@
 - `stats`, `cities` and `check-city` commands.
 - `load()` returns a pandas DataFrame.
 - `CITIES.md` built from the city files with live row counts.
+- Monthly `data-YYYY-MM` release: Parquet and gzipped CSV per city and year, with `MANIFEST.json`.

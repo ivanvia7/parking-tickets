@@ -8,6 +8,8 @@ time_field = "issue_time"
 time_format = "hmm"
 source_url = "https://data.lacity.org/d/4f5p-udkv"
 license = "check on portal page"
+# Published files start here; earlier dates are a few typo tickets.
+first_day = "2013-01-01"
 
 [columns]  # our column = city column
 source_id = "ticket_number"
