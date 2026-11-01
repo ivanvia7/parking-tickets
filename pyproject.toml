@@ -1,0 +1,28 @@
+[project]
+name = "parking-tickets"
+version = "0.1.0"
+description = "Parking tickets from many US cities in one schema, cached in SQLite"
+readme = "README.md"
+authors = [
+    { name = "ivanvia7", email = "ivanvia76@gmail.com" }
+]
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.28.1",
+]
+
+[project.scripts]
+parking-tickets = "parking_tickets:main"
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "duckdb>=1.5.6",
+    "pytest>=9.2.0",
+    "respx>=0.23.1",
+    "ruff>=0.17.3",
+]
