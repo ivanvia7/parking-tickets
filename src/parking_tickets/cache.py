@@ -53,3 +53,16 @@ def save_day(
 def is_fetched(conn: sqlite3.Connection, city: str, day: str) -> bool:
     query = "SELECT 1 FROM fetched_days WHERE city = ? AND day = ?"
     return conn.execute(query, (city, day)).fetchone() is not None
+
+
+STATS_QUERY = """
+SELECT city, count(*), min(substr(issued_at, 1, 10)), max(substr(issued_at, 1, 10)),
+       avg(lat IS NOT NULL AND lon IS NOT NULL), avg("group" = 'other')
+FROM tickets GROUP BY city ORDER BY city
+"""
+STATS_COLUMNS = ("city", "rows", "first_day", "last_day", "with_lat_lon", "in_other")
+
+
+def city_stats(conn: sqlite3.Connection) -> list[dict]:
+    """Rows, date range and the share with lat/lon and in `other`, per city."""
+    return [dict(zip(STATS_COLUMNS, row)) for row in conn.execute(STATS_QUERY)]

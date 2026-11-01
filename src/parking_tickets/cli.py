@@ -13,6 +13,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--version", action="version", version=version("parking-tickets")
     )
     commands = parser.add_subparsers(dest="command", required=True)
+    add_fetch(commands)
+    add_stats(commands)
+    return parser
+
+
+def add_fetch(commands: argparse._SubParsersAction) -> None:
     fetch = commands.add_parser("fetch", help="fetch tickets into the local cache")
     fetch.add_argument("--city", required=True, help="comma list, e.g. la,sf")
     fetch.add_argument("--since", required=True, type=date.fromisoformat)
@@ -26,7 +32,13 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument(
         "--out", type=Path, help="write the rows to .csv, .jsonl, .db or .parquet"
     )
-    return parser
+    fetch.set_defaults(run=fetch_command)
+
+
+def add_stats(commands: argparse._SubParsersAction) -> None:
+    stats = commands.add_parser("stats", help="rows and coverage per cached city")
+    stats.add_argument("--cache", type=Path, default=api.default_cache_path())
+    stats.set_defaults(run=stats_command)
 
 
 def run_fetch(args: argparse.Namespace) -> None:
@@ -63,8 +75,26 @@ def check_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> Non
         parser.error('.parquet needs duckdb: pip install "parking-tickets[parquet]"')
 
 
+def fetch_command(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    check_args(parser, args)
+    run_fetch(args)
+
+
+def stats_command(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    if not args.cache.is_file():
+        parser.error(f"no cache at {args.cache}; run fetch first")
+    rows = cache.city_stats(cache.open_cache(args.cache))
+    if not rows:
+        print(f"{args.cache} holds no tickets")
+    for row in rows:
+        print(
+            f"{row['city']}: {row['rows']} rows, {row['first_day']} to"
+            f" {row['last_day']}, {row['with_lat_lon']:.1%} with lat/lon,"
+            f" {row['in_other']:.1%} in other"
+        )
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-    check_args(parser, args)
-    run_fetch(args)
+    args.run(parser, args)
