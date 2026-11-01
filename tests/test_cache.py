@@ -42,7 +42,43 @@ def test_bad_row_is_skipped_and_counted(tmp_path, monkeypatch):
     day = date(2025, 6, 3)
     rows, skipped = api.fetch(conn, "la", day, day)
     assert rows == len(FIXTURE)
-    assert len(skipped) == 1 and "n/a" in skipped[0]
+    assert len(skipped) == 1
+    assert skipped[0].startswith(
+        "ValueError(\"could not convert string to float: 'n/a'"
+    )
+    old = date(2020, 1, 6)
+    api.fetch(conn, "la", old, old)
+    assert not cache.is_fetched(conn, "la", "2020-01-06")
+
+
+@respx.mock
+def test_reread_day_drops_tickets_the_city_removed(tmp_path, monkeypatch):
+    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
+    yesterday = date.today() - timedelta(days=1)
+    rows = [{**r, "issue_date": f"{yesterday}T00:00:00.000"} for r in FIXTURE]
+    respx.get(URL).mock(
+        side_effect=[httpx.Response(200, json=rows), httpx.Response(200, json=rows[:1])]
+    )
+    conn = cache.open_cache(tmp_path / "c.db")
+    api.fetch(conn, "la", yesterday, yesterday)
+    api.fetch(conn, "la", yesterday, yesterday)
+    assert conn.execute("SELECT count(*) FROM tickets").fetchone()[0] == 1
+
+
+@respx.mock
+def test_timeout_is_retried(monkeypatch):
+    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
+    monkeypatch.setattr("parking_tickets.portals.http.RETRY_SECONDS", 0)
+    route = respx.get(URL).mock(
+        side_effect=[
+            httpx.ReadTimeout("slow"),
+            httpx.Response(200, json=[{"count": "2"}]),
+        ]
+    )
+    from parking_tickets.portals import socrata
+
+    assert socrata.count("data.lacity.org", "4f5p-udkv", "1=1") == 2
+    assert route.call_count == 2
 
 
 @respx.mock

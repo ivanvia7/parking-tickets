@@ -62,7 +62,7 @@ def issued_at(city: dict, row: dict) -> str:
     if not time_field:
         return stamp
     time_raw = row.get(time_field)
-    clock = TIME_FORMATS[city["time_format"]](time_raw) if time_raw else None
+    clock = TIME_FORMATS[city["time_format"]](str(time_raw)) if time_raw else None
     # An unreadable time keeps the day only; a made-up time would mislead.
     return f"{stamp[:10]}T{clock}:00" if clock else stamp[:10]
 
@@ -86,6 +86,13 @@ def column_text(row: dict, source: str | list[str] | None) -> str | None:
     return " ".join(parts) or None
 
 
+def required_text(row: dict, column: str) -> str:
+    value = row.get(column)
+    if value in (None, ""):
+        raise ValueError(f"blank {column}")
+    return str(value)
+
+
 def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
     col = city["columns"]
 
@@ -96,7 +103,7 @@ def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
 
     return Ticket(
         city=city["slug"],
-        source_id=str(row[col["source_id"]]),
+        source_id=required_text(row, col["source_id"]),
         issued_at=issued_at(city, row),
         violation_code=text("violation_code"),
         violation_text=text("violation_text"),

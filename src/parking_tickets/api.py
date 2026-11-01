@@ -44,8 +44,11 @@ def fetch_day(
     conn: sqlite3.Connection, city: dict, day: str, skipped: list[str]
 ) -> int:
     rows = PORTALS[city["portal"]](city, day)
-    tickets = parse_rows(city, rows, fines.load_table(city), skipped)
-    return cache.save_day(conn, city["slug"], day, tickets, is_settled(day))
+    before = len(skipped)
+    tickets = list(parse_rows(city, rows, fines.load_table(city), skipped))
+    # A day with skipped rows stays open, so a fixed city file can read it again.
+    settled = is_settled(day) and len(skipped) == before
+    return cache.save_day(conn, city["slug"], day, tickets, settled)
 
 
 def fetch(

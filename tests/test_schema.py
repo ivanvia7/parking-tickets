@@ -56,3 +56,14 @@ def test_blank_date_is_an_unreadable_row():
         assert "issue_date" in str(error)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_blank_ticket_number_is_an_unreadable_row():
+    city = cities.load("la")
+    row = {**json.loads((FIXTURES / "la.json").read_text())[0], "ticket_number": None}
+    try:
+        to_ticket(city, row)
+    except ValueError as error:
+        assert "ticket_number" in str(error)
+    else:
+        raise AssertionError("expected ValueError")

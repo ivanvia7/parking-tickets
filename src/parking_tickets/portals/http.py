@@ -18,7 +18,7 @@ CLIENT = httpx.Client(
     headers={"User-Agent": USER_AGENT},
     timeout=60,
     follow_redirects=True,
-    transport=httpx.HTTPTransport(local_address="0.0.0.0", retries=3),
+    transport=httpx.HTTPTransport(local_address="0.0.0.0"),
 )
 _last_call: dict[str, float] = {}
 
@@ -38,7 +38,13 @@ def retry_delay(response: httpx.Response, attempt: int) -> float:
 def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> object:
     for attempt in range(1, ATTEMPTS + 1):
         wait_turn(urlsplit(url).netloc)
-        response = CLIENT.get(url, params=params, headers=headers)
+        try:
+            response = CLIENT.get(url, params=params, headers=headers)
+        except httpx.TransportError:
+            if attempt == ATTEMPTS:
+                raise
+            time.sleep(RETRY_SECONDS * attempt)
+            continue
         if response.status_code not in RETRY_STATUSES or attempt == ATTEMPTS:
             break
         time.sleep(retry_delay(response, attempt))

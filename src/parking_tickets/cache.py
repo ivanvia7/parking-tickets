@@ -37,6 +37,10 @@ def save_day(
     rows = [astuple(t) for t in tickets]
     marks = ", ".join("?" for _ in COLUMNS)
     with conn:
+        conn.execute(
+            "DELETE FROM tickets WHERE city = ? AND substr(issued_at, 1, 10) = ?",
+            (city, day),
+        )
         conn.executemany(f"INSERT OR REPLACE INTO tickets VALUES ({marks})", rows)
         if settled:
             conn.execute(
