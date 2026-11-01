@@ -1,12 +1,17 @@
 import os
 import sqlite3
+import warnings
 from collections.abc import Iterator
 from datetime import date, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from parking_tickets import cache, cities, fines
+from parking_tickets import cache, cities, export, fines
 from parking_tickets.portals import carto, socrata
-from parking_tickets.schema import Ticket, to_ticket
+from parking_tickets.schema import COLUMNS, Ticket, to_ticket
+
+if TYPE_CHECKING:
+    import pandas
 
 PORTALS = {"socrata": socrata.read_day, "carto": carto.read_day}
 # Portals upload late: on 2026-11-01 LA had 4,741 tickets for 2026-10-30 against
@@ -66,3 +71,33 @@ def fetch(
         except Exception as error:
             raise RuntimeError(f"{slug} {day}: {error}") from error
     return fetched, skipped
+
+
+def import_pandas() -> "pandas":
+    try:
+        import pandas
+    except ImportError:
+        raise ImportError(
+            'load() needs pandas: pip install "parking-tickets[pandas]"'
+        ) from None
+    return pandas
+
+
+def load(
+    city: str,
+    since: str | date,
+    until: str | date | None = None,
+    cache_path: Path | None = None,
+) -> "pandas.DataFrame":
+    """One city's tickets as a DataFrame; days not cached yet are fetched first."""
+    pd = import_pandas()
+    first = date.fromisoformat(str(since))
+    last = date.fromisoformat(str(until)) if until else date.today() - timedelta(1)
+    if first > last:
+        raise ValueError(f"since {first} is after until {last}")
+    conn = cache.open_cache(cache_path or default_cache_path())
+    _, skipped = fetch(conn, city, first, last)
+    if skipped:
+        warnings.warn(f"{city}: {len(skipped)} unreadable rows skipped", stacklevel=2)
+    rows = export.select_rows(conn, [city], first.isoformat(), last.isoformat())
+    return pd.DataFrame.from_records(list(rows), columns=list(COLUMNS))
