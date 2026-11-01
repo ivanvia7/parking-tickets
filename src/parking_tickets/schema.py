@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, fields
 
 
@@ -38,7 +39,16 @@ def hmm_time(value: str) -> str:
     return f"{digits[:2]}:{digits[2:]}"
 
 
-TIME_FORMATS = {"hmm": hmm_time}
+def hhmmp_time(value: str) -> str | None:
+    """'1008P' -> '22:08'; None when the city wrote something unreadable."""
+    match = re.fullmatch(r"(\d\d)(\d\d)([AP])", value)
+    if not match or int(match[1]) > 12 or int(match[2]) > 59:
+        return None
+    hour = int(match[1]) % 12 + (12 if match[3] == "P" else 0)
+    return f"{hour:02}:{match[2]}"
+
+
+TIME_FORMATS = {"hmm": hmm_time, "hhmmp": hhmmp_time}
 
 
 def issued_at(city: dict, row: dict) -> str:
@@ -47,14 +57,36 @@ def issued_at(city: dict, row: dict) -> str:
     if not time_field:
         return stamp
     clock = TIME_FORMATS[city["time_format"]](row.get(time_field) or "0")
-    return f"{stamp[:10]}T{clock}:00"
+    # An unreadable time keeps the day only; a made-up time would mislead.
+    return f"{stamp[:10]}T{clock}:00" if clock else stamp[:10]
 
 
-def to_ticket(city: dict, row: dict) -> Ticket:
+def fine_from_table(city: dict, fines: dict, row: dict) -> str | None:
+    lookup = city["fine_lookup"]
+    amounts = fines.get(row.get(city["columns"]["violation_code"]))
+    if amounts is None:
+        return None
+    in_zone = row.get(lookup["zone_field"]) in lookup["zone_values"]
+    return amounts[lookup["zone_amount_field"] if in_zone else lookup["amount_field"]]
+
+
+def column_text(row: dict, source: str | list[str] | None) -> str | None:
+    """A list of city columns is joined with spaces, e.g. house number + street."""
+    if source is None:
+        return None
+    if isinstance(source, str):
+        return row.get(source)
+    parts = [row[name] for name in source if row.get(name)]
+    return " ".join(parts) or None
+
+
+def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
     col = city["columns"]
 
     def text(name: str) -> str | None:
-        return row.get(col[name]) if name in col else None
+        return column_text(row, col.get(name))
+
+    fine = fine_from_table(city, fines, row) if fines else text("fine_usd")
 
     return Ticket(
         city=city["slug"],
@@ -63,7 +95,7 @@ def to_ticket(city: dict, row: dict) -> Ticket:
         violation_code=text("violation_code"),
         violation_text=text("violation_text"),
         group=UNGROUPED,
-        fine_usd=number(text("fine_usd")),
+        fine_usd=number(fine),
         location=text("location"),
         lat=coordinate(text("lat")),
         lon=coordinate(text("lon")),

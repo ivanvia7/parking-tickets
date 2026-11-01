@@ -1,0 +1,32 @@
+[
+    {
+        "summons_number": "1500540882",
+        "issue_date": "2025-06-03T00:00:00.000",
+        "violation_time": "1240A",
+        "violation_code": "46",
+        "violation_precinct": "49",
+        "house_number": "2545",
+        "street_name": "OLINVILLE AVE",
+        "registration_state": "NY"
+    },
+    {
+        "summons_number": "9195247774",
+        "issue_date": "2025-06-03T00:00:00.000",
+        "violation_time": "0554P",
+        "violation_code": "70",
+        "violation_precinct": "63",
+        "house_number": "1021",
+        "street_name": "E 57th St",
+        "registration_state": "NY"
+    },
+    {
+        "summons_number": "9208547085",
+        "issue_date": "2025-06-03T00:00:00.000",
+        "violation_time": "0900P",
+        "violation_code": "38",
+        "violation_precinct": "109",
+        "house_number": "135-31",
+        "street_name": "40th Rd",
+        "registration_state": "NY"
+    }
+]

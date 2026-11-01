@@ -1,0 +1,43 @@
+name = "New York City"
+slug = "nyc"
+portal = "socrata"
+host = "data.cityofnewyork.us"
+date_field = "issue_date"
+time_field = "violation_time"
+time_format = "hhmmp"
+fiscal_year_start_month = 7
+source_url = "https://data.cityofnewyork.us/browse?q=parking%20violations%20issued"
+license = "check on portal page"
+
+[datasets_by_fiscal_year]  # one dataset per fiscal year, July to June
+2014 = "jt7v-77mi"
+2015 = "c284-tqph"
+2016 = "kiv2-tbus"
+2017 = "2bnn-yakx"
+2018 = "a5td-mswe"
+2019 = "faiq-9dfq"
+2020 = "p7t3-5i9s"
+2021 = "kvfd-bves"
+2022 = "7mxj-7a6y"
+2023 = "869v-vr48"
+2024 = "8zf9-spf8"
+2025 = "m5vz-tzqv"
+2026 = "9mwx-gamw"
+2027 = "pvqr-7yc4"
+
+[columns]  # our column = city column
+source_id = "summons_number"
+violation_code = "violation_code"
+location = ["house_number", "street_name"]
+plate_state = "registration_state"
+
+# Fines are not on the tickets; they come from the DOF violation code table.
+[fine_lookup]
+host = "data.cityofnewyork.us"
+dataset = "ncbg-6agr"
+code_field = "code"
+amount_field = "all_other_areas"
+zone_amount_field = "manhattan_96th_st_below"
+zone_field = "violation_precinct"
+# ponytail: Manhattan precincts at or below 96th St; 22 and 24 straddle 96th, upgrade is geocoding house number + street.
+zone_values = ["1", "5", "6", "7", "9", "10", "13", "14", "17", "18", "19", "20", "22"]

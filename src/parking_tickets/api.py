@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from datetime import date, timedelta
 from pathlib import Path
 
-from parking_tickets import cache, cities
+from parking_tickets import cache, cities, fines
 from parking_tickets.portals import carto, socrata
 from parking_tickets.schema import to_ticket
 
@@ -23,7 +23,8 @@ def days(since: date, until: date) -> Iterator[str]:
 
 def fetch_day(conn: sqlite3.Connection, city: dict, day: str) -> int:
     rows = PORTALS[city["portal"]](city, day)
-    tickets = (to_ticket(city, row) for row in rows)
+    table = fines.load_table(city)
+    tickets = (to_ticket(city, row, table) for row in rows)
     return cache.save_day(conn, city["slug"], day, tickets)
 
 
@@ -38,5 +39,5 @@ def fetch(conn: sqlite3.Connection, slug: str, since: date, until: date) -> int:
         try:
             fetched += fetch_day(conn, city, day)
         except Exception as error:
-            raise RuntimeError(f"{slug} {city['dataset']} {day}: {error}") from error
+            raise RuntimeError(f"{slug} {day}: {error}") from error
     return fetched
