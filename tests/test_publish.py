@@ -40,8 +40,7 @@ def test_plan_respects_first_and_last_day():
 
 
 @respx.mock
-def test_build_and_manifest_rows_match(tmp_path, monkeypatch):
-    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
+def test_build_and_manifest_rows_match(tmp_path):
     respx.get(URL).mock(return_value=httpx.Response(200, json=FIXTURE))
     publish.build("la", "2025-06-03", "2025-06-03", tmp_path)
     body = json.loads(publish.manifest(tmp_path).read_text())

@@ -16,13 +16,13 @@ URL = "https://phl.carto.com/api/v2/sql"
 
 def test_day_filter_spans_one_day():
     assert (
-        carto.day_filter("d", "2017-12-31") == "d >= '2017-12-31' AND d < '2018-01-01'"
+        carto.span_filter("d", "2017-12-31", "2017-12-31")
+        == "d >= '2017-12-31' AND d < '2018-01-01'"
     )
 
 
 @respx.mock
-def test_read_day_maps_philadelphia_rows(monkeypatch):
-    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
+def test_read_day_maps_philadelphia_rows():
     route = respx.get(URL).mock(
         return_value=httpx.Response(200, json={"rows": FIXTURE})
     )

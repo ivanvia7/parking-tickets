@@ -12,6 +12,7 @@ MIN_GAP_SECONDS = 1.0
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 ATTEMPTS = 3
 RETRY_SECONDS = 5.0
+MAX_RETRY_SECONDS = 60.0
 
 # IPv4 only: an IPv6 fallback on some networks hides the real connect error.
 CLIENT = httpx.Client(
@@ -32,7 +33,8 @@ def wait_turn(host: str) -> None:
 
 def retry_delay(response: httpx.Response, attempt: int) -> float:
     after = response.headers.get("Retry-After", "")
-    return float(after) if after.isdigit() else RETRY_SECONDS * attempt
+    wait = float(after) if after.isdigit() else RETRY_SECONDS * attempt
+    return min(wait, MAX_RETRY_SECONDS)
 
 
 def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> object:

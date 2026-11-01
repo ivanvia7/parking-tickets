@@ -1,5 +1,4 @@
 import json
-import subprocess
 from pathlib import Path
 
 import httpx
@@ -12,11 +11,6 @@ from parking_tickets.check import check_city, city_columns
 FIXTURES = Path(__file__).parent / "fixtures"
 LA_URL = "https://data.lacity.org/resource/4f5p-udkv.json"
 PHL_URL = "https://phl.carto.com/api/v2/sql"
-
-
-@pytest.fixture(autouse=True)
-def no_wait(monkeypatch):
-    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
 
 
 def test_city_columns_lists_joined_and_zone_columns_once():
@@ -57,18 +51,20 @@ def test_all_rows_unreadable_fails():
         check_city("philadelphia")
 
 
-def test_cli_unknown_city_exits_2():
-    result = subprocess.run(
-        ["parking-tickets", "check-city", "atlantis"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 2 and "unknown city atlantis" in result.stderr
+def test_cli_unknown_city_exits_2(run_cli):
+    code, _, err = run_cli("check-city", "atlantis")
+    assert code == 2 and "unknown city atlantis" in err
 
 
-def test_cli_lists_cities():
-    result = subprocess.run(
-        ["parking-tickets", "cities"], capture_output=True, text=True, check=True
+def test_cli_lists_cities(run_cli):
+    code, out, _ = run_cli("cities")
+    assert code == 0 and out.split() == cities.slugs()
+
+
+def test_check_city_names_city_when_fiscal_year_is_missing(monkeypatch):
+    nyc = cities.load("nyc")
+    monkeypatch.setattr(
+        cities, "load", lambda slug: {**nyc, "datasets_by_fiscal_year": {}}
     )
-    assert result.stdout.split() == cities.slugs()
+    with pytest.raises(RuntimeError, match=r"nyc .*no dataset listed for fiscal year"):
+        check_city("nyc")

@@ -70,8 +70,7 @@ def test_missing_groups_file_fails_loud(tmp_path, monkeypatch):
 
 
 @respx.mock
-def test_socrata_count_by_sums_both_nyc_datasets(monkeypatch):
-    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
+def test_socrata_count_by_sums_both_nyc_datasets():
     host = "https://data.cityofnewyork.us/resource"
     respx.get(f"{host}/m5vz-tzqv.json").mock(
         return_value=httpx.Response(
@@ -87,8 +86,7 @@ def test_socrata_count_by_sums_both_nyc_datasets(monkeypatch):
 
 
 @respx.mock
-def test_carto_count_by_sends_group_by(monkeypatch):
-    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
+def test_carto_count_by_sends_group_by():
     route = respx.get("https://phl.carto.com/api/v2/sql").mock(
         return_value=httpx.Response(200, json={"rows": [{"key": "SIDEWALK", "n": 3}]})
     )

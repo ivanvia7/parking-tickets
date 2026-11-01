@@ -42,5 +42,5 @@ text_field = "definition"
 amount_field = "all_other_areas"
 zone_amount_field = "manhattan_96th_st_below"
 zone_field = "violation_precinct"
-# ponytail: Manhattan precincts at or below 96th St; 22 and 24 straddle 96th, upgrade is geocoding house number + street.
+# Known limit: Manhattan precincts at or below 96th St; 22 and 24 straddle 96th, upgrade is geocoding house number + street.
 zone_values = ["1", "5", "6", "7", "9", "10", "13", "14", "17", "18", "19", "20", "22"]

@@ -1,14 +1,8 @@
 import httpx
-import pytest
 import respx
 
 from parking_tickets import cities
 from parking_tickets.portals import carto, socrata
-
-
-@pytest.fixture(autouse=True)
-def no_wait(monkeypatch):
-    monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
 
 
 @respx.mock

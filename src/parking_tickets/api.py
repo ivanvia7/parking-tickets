@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 PORTALS = {"socrata": socrata.read_day, "carto": carto.read_day}
 # Portals upload late: on 2026-11-01 LA had 4,741 tickets for 2026-10-30 against
 # about 7,300 on a full weekday. Days newer than this are re-read on every fetch.
-# ponytail: late NYC tickets still arrive months later; upgrade is `fetch --refresh`.
+# Known limit: late NYC tickets still arrive months later; upgrade is `fetch --refresh`.
 SETTLE_DAYS = 30
 
 
@@ -69,7 +69,7 @@ def fetch(
             continue
         try:
             fetched += fetch_day(conn, city, day, skipped)
-        except Exception as error:
+        except (RuntimeError, ValueError) as error:
             raise RuntimeError(f"{slug} {day}: {error}") from error
     return fetched, skipped
 

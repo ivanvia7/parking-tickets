@@ -120,9 +120,9 @@ def stats_command(parser: argparse.ArgumentParser, args: argparse.Namespace) -> 
         )
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     try:
         args.run(parser, args)
     except RuntimeError as error:

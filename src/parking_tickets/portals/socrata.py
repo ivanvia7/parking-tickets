@@ -16,12 +16,6 @@ def resource_url(host: str, dataset: str) -> str:
     return f"https://{host}/resource/{dataset}.json"
 
 
-def count(host: str, dataset: str, where: str) -> int:
-    params = {"$select": "count(*)", "$where": where}
-    rows = get_json(resource_url(host, dataset), params, auth_headers())
-    return int(rows[0]["count"])
-
-
 def read(
     host: str, dataset: str, where: str, page_size: int = PAGE_SIZE
 ) -> Iterator[dict]:
@@ -46,10 +40,6 @@ def span_filter(date_field: str, since: str, until: str) -> str:
     return f"{date_field} >= '{since}T00:00:00' AND {date_field} < '{after}T00:00:00'"
 
 
-def day_filter(date_field: str, day: str) -> str:
-    return span_filter(date_field, day, day)
-
-
 def fiscal_year(day: str, start_month: int) -> int:
     year, month = int(day[:4]), int(day[5:7])
     return year + 1 if month >= start_month else year
@@ -67,7 +57,7 @@ def dataset_ids(city: dict, day: str) -> list[str]:
 
 
 def read_day(city: dict, day: str) -> Iterator[dict]:
-    where = day_filter(city["date_field"], day)
+    where = span_filter(city["date_field"], day, day)
     for dataset in dataset_ids(city, day):
         yield from read(city["host"], dataset, where)
 

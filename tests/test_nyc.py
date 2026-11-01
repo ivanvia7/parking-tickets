@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from parking_tickets import cities
 from parking_tickets.portals.socrata import dataset_ids
 from parking_tickets.schema import hhmmp_time, to_ticket
@@ -48,9 +50,16 @@ def test_manhattan_zone_pays_the_higher_fine():
 
 
 def test_day_without_a_listed_dataset_fails():
-    try:
+    with pytest.raises(ValueError, match="2012"):
         dataset_ids(cities.load("nyc"), "2012-01-01")
-    except ValueError as error:
-        assert "2012" in str(error)
-    else:
-        raise AssertionError("expected ValueError")
+
+
+def test_text_comes_from_code_table_and_blank_amount_is_no_fine():
+    city = cities.load("nyc")
+    row = {**ROWS[0], "violation_code": "21", "violation_precinct": "109"}
+    table = {"21": {"definition": "NO PARKING-STREET CLEANING"}}
+    ticket = to_ticket(city, row, table)
+    assert ticket.violation_text == "NO PARKING-STREET CLEANING"
+    assert ticket.fine_usd is None and ticket.group == "street_cleaning"
+    unknown = to_ticket(city, {**row, "violation_code": "0"}, table)
+    assert unknown.violation_text is None and unknown.group == "other"

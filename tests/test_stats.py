@@ -1,5 +1,4 @@
 import json
-import subprocess
 from dataclasses import replace
 from pathlib import Path
 
@@ -32,24 +31,15 @@ def test_empty_cache_has_no_stats(tmp_path):
     assert cache.city_stats(cache.open_cache(tmp_path / "c.db")) == []
 
 
-def run_stats(path: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["parking-tickets", "stats", "--cache", str(path)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-
-def test_stats_on_missing_cache_fails_without_creating_it(tmp_path):
+def test_stats_on_missing_cache_fails_without_creating_it(run_cli, tmp_path):
     path = tmp_path / "none.db"
-    result = run_stats(path)
-    assert result.returncode == 2 and "run fetch first" in result.stderr
+    code, _, err = run_cli("stats", "--cache", str(path))
+    assert code == 2 and "run fetch first" in err
     assert not path.exists()
 
 
-def test_stats_on_empty_cache_says_so(tmp_path):
+def test_stats_on_empty_cache_says_so(run_cli, tmp_path):
     path = tmp_path / "c.db"
     cache.open_cache(path).close()
-    result = run_stats(path)
-    assert result.returncode == 0 and "holds no tickets" in result.stdout
+    code, out, _ = run_cli("stats", "--cache", str(path))
+    assert code == 0 and "holds no tickets" in out

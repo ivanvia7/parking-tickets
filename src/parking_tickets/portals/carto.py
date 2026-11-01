@@ -16,16 +16,8 @@ def span_filter(date_field: str, since: str, until: str) -> str:
     return f"{date_field} >= '{since}' AND {date_field} < '{after}'"
 
 
-def day_filter(date_field: str, day: str) -> str:
-    return span_filter(date_field, day, day)
-
-
 def query(host: str, sql: str) -> list[dict]:
     return get_json(sql_url(host), {"q": sql}, {})["rows"]
-
-
-def count(host: str, table: str, where: str) -> int:
-    return int(query(host, f"SELECT count(*) FROM {table} WHERE {where}")[0]["count"])
 
 
 def read(
@@ -47,7 +39,7 @@ def read(
 
 def read_day(city: dict, day: str) -> Iterator[dict]:
     columns = [city["date_field"], *city["columns"].values()]
-    where = day_filter(city["date_field"], day)
+    where = span_filter(city["date_field"], day, day)
     return read(city["host"], city["dataset"], columns, where)
 
 
