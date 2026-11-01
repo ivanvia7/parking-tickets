@@ -87,3 +87,15 @@ def count_by(city: dict, column: str, since: str, until: str) -> dict[str | None
             key = row.get(column)
             counts[key] = counts.get(key, 0) + int(row["n"])
     return counts
+
+
+def sample(city: dict, columns: list[str], limit: int) -> list[dict]:
+    """Newest rows, only the given columns; the portal rejects a missing column."""
+    dataset = dataset_ids(city, date.today().isoformat())[0]
+    params = {
+        "$select": ", ".join(columns),
+        "$where": f"{city['date_field']} IS NOT NULL",
+        "$order": f"{city['date_field']} DESC",
+        "$limit": str(limit),
+    }
+    return get_json(resource_url(city["host"], dataset), params, auth_headers())

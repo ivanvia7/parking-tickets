@@ -59,3 +59,12 @@ def count_by(city: dict, column: str, since: str, until: str) -> dict[str | None
         f" WHERE {where} GROUP BY {column}"
     )
     return {row["key"]: int(row["n"]) for row in query(city["host"], sql)}
+
+
+def sample(city: dict, columns: list[str], limit: int) -> list[dict]:
+    """Newest rows, only the given columns; the portal rejects a missing column."""
+    sql = (
+        f"SELECT {', '.join(columns)} FROM {city['dataset']}"
+        f" WHERE {city['date_field']} IS NOT NULL ORDER BY {city['date_field']} DESC LIMIT {limit}"
+    )
+    return query(city["host"], sql)

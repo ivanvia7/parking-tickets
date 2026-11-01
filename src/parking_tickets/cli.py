@@ -4,7 +4,7 @@ from importlib.metadata import version
 from importlib.util import find_spec
 from pathlib import Path
 
-from parking_tickets import api, cache, cities, export
+from parking_tickets import api, cache, check, cities, export
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -15,6 +15,10 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     add_fetch(commands)
     add_stats(commands)
+    add_check_city(commands)
+    commands.add_parser("cities", help="list city slugs").set_defaults(
+        run=lambda parser, args: print("\n".join(cities.slugs()))
+    )
     return parser
 
 
@@ -73,6 +77,26 @@ def check_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> Non
         parser.error("--out must not be the cache file; exporting there would erase it")
     if args.out.suffix == ".parquet" and find_spec("duckdb") is None:
         parser.error('.parquet needs duckdb: pip install "parking-tickets[parquet]"')
+
+
+def add_check_city(commands: argparse._SubParsersAction) -> None:
+    command = commands.add_parser(
+        "check-city", help="read 100 live rows through a city file"
+    )
+    command.add_argument("slug")
+    command.set_defaults(run=check_city_command)
+
+
+def check_city_command(
+    parser: argparse.ArgumentParser, args: argparse.Namespace
+) -> None:
+    if args.slug not in cities.slugs():
+        parser.error(f"unknown city {args.slug}; known: {', '.join(cities.slugs())}")
+    try:
+        rows, skipped = check.check_city(args.slug)
+    except RuntimeError as error:
+        raise SystemExit(f"FAIL {error}") from None
+    print(f"ok {args.slug}: {rows} live rows read, {skipped} unreadable")
 
 
 def fetch_command(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
