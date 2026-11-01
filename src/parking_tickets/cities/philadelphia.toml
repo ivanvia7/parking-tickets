@@ -4,6 +4,8 @@ portal = "carto"
 host = "phl.carto.com"
 dataset = "parking_violations"
 date_field = "issue_datetime"
+# No code column; groups.csv lists the description text instead.
+group_by = "violation_text"
 source_url = "https://opendataphilly.org/datasets/parking-violations/"
 license = "check on portal page"
 # The published table covers 2012 to 2017 only.

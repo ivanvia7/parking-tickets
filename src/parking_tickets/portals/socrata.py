@@ -40,9 +40,14 @@ def read(
         offset += page_size
 
 
+def span_filter(date_field: str, since: str, until: str) -> str:
+    """Days since..until, both included."""
+    after = (date.fromisoformat(until) + timedelta(days=1)).isoformat()
+    return f"{date_field} >= '{since}T00:00:00' AND {date_field} < '{after}T00:00:00'"
+
+
 def day_filter(date_field: str, day: str) -> str:
-    next_day = (date.fromisoformat(day) + timedelta(days=1)).isoformat()
-    return f"{date_field} >= '{day}T00:00:00' AND {date_field} < '{next_day}T00:00:00'"
+    return span_filter(date_field, day, day)
 
 
 def fiscal_year(day: str, start_month: int) -> int:
@@ -65,3 +70,20 @@ def read_day(city: dict, day: str) -> Iterator[dict]:
     where = day_filter(city["date_field"], day)
     for dataset in dataset_ids(city, day):
         yield from read(city["host"], dataset, where)
+
+
+def count_by(city: dict, column: str, since: str, until: str) -> dict[str | None, int]:
+    """Tickets per value of one city column, counted by the portal, not fetched."""
+    params = {
+        "$select": f"{column}, count(*) AS n",
+        "$where": span_filter(city["date_field"], since, until),
+        "$group": column,
+        "$limit": str(PAGE_SIZE),
+    }
+    counts: dict[str | None, int] = {}
+    for dataset in dataset_ids(city, since):
+        url = resource_url(city["host"], dataset)
+        for row in get_json(url, params, auth_headers()):
+            key = row.get(column)
+            counts[key] = counts.get(key, 0) + int(row["n"])
+    return counts

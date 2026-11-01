@@ -1,6 +1,8 @@
 import re
 from dataclasses import dataclass, fields
 
+from parking_tickets import groups
+
 
 @dataclass(frozen=True, slots=True)
 class Ticket:
@@ -18,7 +20,6 @@ class Ticket:
 
 
 COLUMNS = tuple(f.name for f in fields(Ticket))
-UNGROUPED = "other"
 
 
 def number(value: object) -> float | None:
@@ -107,7 +108,7 @@ def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
         issued_at=issued_at(city, row),
         violation_code=text("violation_code"),
         violation_text=text("violation_text"),
-        group=UNGROUPED,
+        group=groups.group_of(city["slug"], text(groups.group_key(city))),
         fine_usd=number(fine),
         location=text("location"),
         lat=coordinate(text("lat")),

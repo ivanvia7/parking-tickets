@@ -10,9 +10,14 @@ def sql_url(host: str) -> str:
     return f"https://{host}/api/v2/sql"
 
 
+def span_filter(date_field: str, since: str, until: str) -> str:
+    """Days since..until, both included."""
+    after = (date.fromisoformat(until) + timedelta(days=1)).isoformat()
+    return f"{date_field} >= '{since}' AND {date_field} < '{after}'"
+
+
 def day_filter(date_field: str, day: str) -> str:
-    next_day = (date.fromisoformat(day) + timedelta(days=1)).isoformat()
-    return f"{date_field} >= '{day}' AND {date_field} < '{next_day}'"
+    return span_filter(date_field, day, day)
 
 
 def query(host: str, sql: str) -> list[dict]:
@@ -44,3 +49,13 @@ def read_day(city: dict, day: str) -> Iterator[dict]:
     columns = [city["date_field"], *city["columns"].values()]
     where = day_filter(city["date_field"], day)
     return read(city["host"], city["dataset"], columns, where)
+
+
+def count_by(city: dict, column: str, since: str, until: str) -> dict[str | None, int]:
+    """Tickets per value of one city column, counted by the portal, not fetched."""
+    where = span_filter(city["date_field"], since, until)
+    sql = (
+        f"SELECT {column} AS key, count(*) AS n FROM {city['dataset']}"
+        f" WHERE {where} GROUP BY {column}"
+    )
+    return {row["key"]: int(row["n"]) for row in query(city["host"], sql)}

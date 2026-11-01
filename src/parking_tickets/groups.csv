@@ -1,0 +1,170 @@
+city,code,group
+la,80.69BS,street_cleaning
+la,8069BS,street_cleaning
+la,88.13B+,meter
+la,8813B+,meter
+la,8813B,meter
+la,88.63B+,meter
+la,88.03A,meter
+la,80.56E4+,no_stopping
+la,8056E4,no_stopping
+la,8056E4+,no_stopping
+la,8936,no_stopping
+la,22500M,bus_zone
+la,22500I,bus_zone
+la,22500I-,bus_zone
+la,80.58L,permit
+la,8058L,permit
+la,80.54H1,permit
+la,5200,plates
+la,5200A,plates
+la,80.69B,no_parking
+la,8069B,no_parking
+la,80.61,no_parking
+la,8061,no_parking
+la,8603,no_parking
+la,22500H,double_parking
+la,80.69AP+,no_stopping
+la,8069AP+,no_stopping
+la,8069AP,no_stopping
+la,80.69AA+,no_stopping
+la,80.69A+,no_stopping
+la,8069A,no_stopping
+la,80.70,no_stopping
+la,8070,no_stopping
+la,80.69C,time_limit
+la,8069C,time_limit
+la,80.69.2,time_limit
+la,80.73.2,time_limit
+la,80732,time_limit
+la,4000(a)1,registration
+la,4000A1,registration
+la,22514,hydrant
+la,22500E,driveway
+la,80.56E1,loading_zone
+la,80.56E2,loading_zone
+la,8939,loading_zone
+la,17104H,loading_zone
+la,22500F,sidewalk
+la,22507.8A-,disabled
+la,22507.8C2,disabled
+la,21211B,bike_lane
+la,22500B,crosswalk
+sf,TRC7.2.22,street_cleaning
+sf,TRC7.2.23B,meter
+sf,TRC7.2.23A,meter
+sf,TRC7.2.20,permit
+sf,V5200,plates
+sf,V5201A,plates
+sf,V5201B,plates
+sf,V5201C,plates
+sf,V5202,plates
+sf,TRC7.2.26,loading_zone
+sf,TRC7.2.27,loading_zone
+sf,TRC7.2.83,loading_zone
+sf,V22500E,driveway
+sf,TRC7.2.40,no_parking
+sf,TRC7.2.41,no_parking
+sf,TRC7.2.38,no_parking
+sf,TRC7.2.45,no_parking
+sf,TRC7.2.46,no_parking
+sf,TRC7.2.42,no_parking
+sf,TRC7.2.55,no_parking
+sf,TRC7.2.25,no_stopping
+sf,TRC7.2.70,no_stopping
+sf,V22500F,sidewalk
+sf,V22500H,double_parking
+sf,V4000A,registration
+sf,V22500I,bus_zone
+sf,TRC7.2.39,bus_zone
+sf,V22500N,crosswalk
+sf,V22500B,crosswalk
+sf,TRC7.2.30B,time_limit
+sf,TRC7.2.30A,time_limit
+sf,TRC7.2.29,time_limit
+sf,V22514,hydrant
+sf,V21211,bike_lane
+sf,V22500L,disabled
+sf,V22507.8A,disabled
+nyc,36,speed_camera
+nyc,7,red_light_camera
+nyc,21,street_cleaning
+nyc,32,meter
+nyc,34,meter
+nyc,37,meter
+nyc,38,meter
+nyc,42,meter
+nyc,43,meter
+nyc,69,meter
+nyc,14,no_stopping
+nyc,10,no_stopping
+nyc,13,no_stopping
+nyc,15,no_stopping
+nyc,17,no_stopping
+nyc,22,no_stopping
+nyc,31,no_stopping
+nyc,64,no_stopping
+nyc,20,no_parking
+nyc,24,no_parking
+nyc,78,no_parking
+nyc,5,bus_zone
+nyc,12,bus_zone
+nyc,18,bus_zone
+nyc,19,bus_zone
+nyc,40,hydrant
+nyc,71,inspection
+nyc,72,inspection
+nyc,70,registration
+nyc,73,registration
+nyc,75,registration
+nyc,83,registration
+nyc,74,plates
+nyc,46,double_parking
+nyc,47,double_parking
+nyc,16,loading_zone
+nyc,11,loading_zone
+nyc,50,crosswalk
+nyc,52,crosswalk
+nyc,48,bike_lane
+nyc,51,sidewalk
+nyc,98,driveway
+nyc,27,disabled
+nyc,67,disabled
+nyc,39,time_limit
+nyc,44,time_limit
+nyc,86,time_limit
+nyc,33,permit
+nyc,87,permit
+philadelphia,METER EXPIRED CC,meter
+philadelphia,METER EXPIRED,meter
+philadelphia,OVER TIME LIMIT,time_limit
+philadelphia,OVER TIME LIMIT CC,time_limit
+philadelphia,STOP PROHIBITED CC,no_stopping
+philadelphia,STOPPING PROHIBITED,no_stopping
+philadelphia,EXPIRED INSPECTION,inspection
+philadelphia,PARKING PROHBITED CC,no_parking
+philadelphia,PARKING PROHBITED,no_parking
+philadelphia,PARKING PROHIBITED,no_parking
+philadelphia,PASSENGR LOADNG ZONE,loading_zone
+philadelphia,LOADING ZONE   CC,loading_zone
+philadelphia,LOADING ZONE,loading_zone
+philadelphia,FIRE HYDRANT,hydrant
+philadelphia,SIDEWALK,sidewalk
+philadelphia,SIDEWALK   CC,sidewalk
+philadelphia,HP RESERVED SPACE,disabled
+philadelphia,HP RAMP BLOCKED,disabled
+philadelphia,BUS ONLY ZONE,bus_zone
+philadelphia,BUS ONLY ZONE   CC,bus_zone
+philadelphia,CORNER CLEARANCE,crosswalk
+philadelphia,CORNER CLEARANCE  CC,crosswalk
+philadelphia,CROSSWALK,crosswalk
+philadelphia,CROSSWALK    CC,crosswalk
+philadelphia,DOUBLE PARKED  CC,double_parking
+philadelphia,DOUBLE PARKED,double_parking
+philadelphia,BLOCKING DRIVEWAY,driveway
+philadelphia,BLOCKING DRIVEWAY CC,driveway
+philadelphia,UNREG/ABANDONED VEH,registration
+philadelphia,EXPIRED TAG,registration
+philadelphia,STREET CLEANING,street_cleaning
+sf,TRC7.2.101A,transit_fare
+sf,TRC7.2.60,meter

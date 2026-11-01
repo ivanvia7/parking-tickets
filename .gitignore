@@ -10,3 +10,4 @@ dist/
 *.jsonl
 *.parquet
 .env
+!src/parking_tickets/groups.csv
