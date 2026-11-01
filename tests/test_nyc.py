@@ -36,3 +36,21 @@ def test_fine_comes_from_code_table_by_zone():
         midtown = row.get("violation_precinct") in city["fine_lookup"]["zone_values"]
         assert ticket.fine_usd == (65.0 if midtown else 35.0)
         assert ticket.location and ticket.issued_at.startswith("2025-06-03")
+
+
+def test_manhattan_zone_pays_the_higher_fine():
+    city = cities.load("nyc")
+    table = {"14": {"all_other_areas": "95", "manhattan_96th_st_below": "115"}}
+    row = {**ROWS[0], "violation_code": "14", "violation_precinct": "14"}
+    assert to_ticket(city, row, table).fine_usd == 115.0
+    row["violation_precinct"] = "109"
+    assert to_ticket(city, row, table).fine_usd == 95.0
+
+
+def test_day_without_a_listed_dataset_fails():
+    try:
+        dataset_ids(cities.load("nyc"), "2012-01-01")
+    except ValueError as error:
+        assert "2012" in str(error)
+    else:
+        raise AssertionError("expected ValueError")

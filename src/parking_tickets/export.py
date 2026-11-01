@@ -55,9 +55,14 @@ def to_parquet(rows: Iterator[tuple], path: Path) -> None:
         staged = Path(tmp) / "rows.jsonl"
         to_jsonl(rows, staged)
         duckdb.sql(
-            f"COPY (SELECT * FROM read_json('{staged}', columns={columns}))"
-            f" TO '{path}' (FORMAT parquet, COMPRESSION zstd)"
+            f"COPY (SELECT * FROM read_json({sql_text(staged)}, columns={columns}))"
+            f" TO {sql_text(path)} (FORMAT parquet, COMPRESSION zstd)"
         )
+
+
+def sql_text(path: Path) -> str:
+    """Quote a path for duckdb SQL, which takes no parameters in COPY."""
+    return "'" + str(path).replace("'", "''") + "'"
 
 
 WRITERS = {".csv": to_csv, ".jsonl": to_jsonl, ".db": to_sqlite, ".parquet": to_parquet}

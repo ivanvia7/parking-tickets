@@ -39,3 +39,20 @@ def test_sf_rows_map_to_schema():
     tickets = [to_ticket(city, row) for row in rows]
     assert all(t.fine_usd is not None for t in tickets)
     assert all(t.issued_at.startswith("2025-06-03T") for t in tickets)
+
+
+def test_blank_time_keeps_the_date_only():
+    city = cities.load("la")
+    row = {**json.loads((FIXTURES / "la.json").read_text())[0], "issue_time": ""}
+    assert to_ticket(city, row).issued_at == "2025-06-03"
+
+
+def test_blank_date_is_an_unreadable_row():
+    city = cities.load("la")
+    row = {**json.loads((FIXTURES / "la.json").read_text())[0], "issue_date": ""}
+    try:
+        to_ticket(city, row)
+    except ValueError as error:
+        assert "issue_date" in str(error)
+    else:
+        raise AssertionError("expected ValueError")

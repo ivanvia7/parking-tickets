@@ -56,6 +56,8 @@ def dataset_ids(city: dict, day: str) -> list[str]:
     # Late tickets land in the next fiscal year's dataset, so read both.
     year = fiscal_year(day, city["fiscal_year_start_month"])
     by_year = city["datasets_by_fiscal_year"]
+    if str(year) not in by_year:
+        raise ValueError(f"no dataset listed for fiscal year {year}")
     return [by_year[str(y)] for y in (year, year + 1) if str(y) in by_year]
 
 

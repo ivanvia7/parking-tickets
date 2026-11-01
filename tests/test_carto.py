@@ -23,9 +23,13 @@ def test_day_filter_spans_one_day():
 @respx.mock
 def test_read_day_maps_philadelphia_rows(monkeypatch):
     monkeypatch.setattr("parking_tickets.portals.http.MIN_GAP_SECONDS", 0)
-    respx.get(URL).mock(return_value=httpx.Response(200, json={"rows": FIXTURE}))
+    route = respx.get(URL).mock(
+        return_value=httpx.Response(200, json={"rows": FIXTURE})
+    )
     city = cities.load("philadelphia")
     tickets = [to_ticket(city, r) for r in carto.read_day(city, "2017-06-06")]
+    sql = route.calls[0].request.url.params["q"]
+    assert "issue_datetime >= '2017-06-06' AND issue_datetime < '2017-06-07'" in sql
     assert len(tickets) == len(FIXTURE)
     assert all(t.issued_at.startswith("2017-06-06T") for t in tickets)
     assert all(isinstance(t.source_id, str) for t in tickets)

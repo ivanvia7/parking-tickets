@@ -127,6 +127,11 @@ dependencies = [
     { name = "httpx" },
 ]
 
+[package.optional-dependencies]
+parquet = [
+    { name = "duckdb" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "duckdb" },
@@ -136,7 +141,11 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "httpx", specifier = ">=0.28.1" }]
+requires-dist = [
+    { name = "duckdb", marker = "extra == 'parquet'", specifier = ">=1.5.6" },
+    { name = "httpx", specifier = ">=0.28.1" },
+]
+provides-extras = ["parquet"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -1,6 +1,7 @@
 import argparse
 from datetime import date, timedelta
 from importlib.metadata import version
+from importlib.util import find_spec
 from pathlib import Path
 
 from parking_tickets import api, cache, cities, export
@@ -32,8 +33,10 @@ def run_fetch(args: argparse.Namespace) -> None:
     slugs = [s.strip() for s in args.city.split(",")]
     conn = cache.open_cache(args.cache)
     for slug in slugs:
-        rows = api.fetch(conn, slug, args.since, args.until)
-        print(f"{slug}: {rows} rows read")
+        rows, skipped = api.fetch(conn, slug, args.since, args.until)
+        print(f"{slug}: {rows} rows read, {len(skipped)} unreadable rows skipped")
+        if skipped:
+            print(f"  first skipped: {skipped[0][:300]}")
     if args.out:
         since, until = args.since.isoformat(), args.until.isoformat()
         export.export(conn, slugs, since, until, args.out)
@@ -50,8 +53,14 @@ def check_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> Non
         parser.error(
             f"unknown city {', '.join(sorted(unknown))}; known: {', '.join(known)}"
         )
-    if args.out and args.out.suffix not in export.WRITERS:
+    if not args.out:
+        return
+    if args.out.suffix not in export.WRITERS:
         parser.error(f"--out must end with one of {', '.join(export.WRITERS)}")
+    if args.out.resolve() == args.cache.resolve():
+        parser.error("--out must not be the cache file; exporting there would erase it")
+    if args.out.suffix == ".parquet" and find_spec("duckdb") is None:
+        parser.error('.parquet needs duckdb: pip install "parking-tickets[parquet]"')
 
 
 def main() -> None:

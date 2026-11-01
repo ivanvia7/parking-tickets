@@ -20,3 +20,10 @@ def test_bad_input_fails_before_any_download():
     out = run_cli(*base, "--city", "la", "--out", "t.xlsx")
     assert city.returncode == 2 and "unknown city atlantis" in city.stderr
     assert out.returncode == 2 and "--out must end with" in out.stderr
+
+
+def test_out_onto_cache_is_refused(tmp_path):
+    cache = str(tmp_path / "c.db")
+    base = ["fetch", "--since", "2025-06-03", "--until", "2025-06-03", "--city", "la"]
+    result = run_cli(*base, "--cache", cache, "--out", cache)
+    assert result.returncode == 2 and "cache file" in result.stderr

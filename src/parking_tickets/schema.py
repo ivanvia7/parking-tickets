@@ -54,11 +54,15 @@ TIME_FORMATS = {"hmm": hmm_time, "hhmmp": hhmmp_time}
 
 
 def issued_at(city: dict, row: dict) -> str:
-    stamp = row[city["date_field"]][:19]
+    raw = row.get(city["date_field"])
+    if not raw:
+        raise ValueError(f"blank {city['date_field']}")
+    stamp = raw[:19]
     time_field = city.get("time_field")
     if not time_field:
         return stamp
-    clock = TIME_FORMATS[city["time_format"]](row.get(time_field) or "0")
+    time_raw = row.get(time_field)
+    clock = TIME_FORMATS[city["time_format"]](time_raw) if time_raw else None
     # An unreadable time keeps the day only; a made-up time would mislead.
     return f"{stamp[:10]}T{clock}:00" if clock else stamp[:10]
 

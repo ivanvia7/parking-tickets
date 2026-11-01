@@ -12,6 +12,9 @@ dependencies = [
     "httpx>=0.28.1",
 ]
 
+[project.optional-dependencies]
+parquet = ["duckdb>=1.5.6"]
+
 [project.scripts]
 parking-tickets = "parking_tickets:main"
 
