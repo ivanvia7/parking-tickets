@@ -41,3 +41,7 @@ def read(
 
 def day_filter(date_field: str, day: str) -> str:
     return f"{date_field} >= '{day}T00:00:00' AND {date_field} < '{day}T23:59:59.999'"
+
+
+def read_day(city: dict, day: str) -> Iterator[dict]:
+    return read(city["host"], city["dataset"], day_filter(city["date_field"], day))
