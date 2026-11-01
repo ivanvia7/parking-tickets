@@ -2,6 +2,7 @@ import os
 import sqlite3
 import warnings
 from collections.abc import Iterator
+from contextlib import closing
 from datetime import date, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -95,9 +96,11 @@ def load(
     last = date.fromisoformat(str(until)) if until else date.today() - timedelta(1)
     if first > last:
         raise ValueError(f"since {first} is after until {last}")
-    conn = cache.open_cache(cache_path or default_cache_path())
-    _, skipped = fetch(conn, city, first, last)
+    with closing(cache.open_cache(cache_path or default_cache_path())) as conn:
+        _, skipped = fetch(conn, city, first, last)
+        rows = list(
+            export.select_rows(conn, [city], first.isoformat(), last.isoformat())
+        )
     if skipped:
         warnings.warn(f"{city}: {len(skipped)} unreadable rows skipped", stacklevel=2)
-    rows = export.select_rows(conn, [city], first.isoformat(), last.isoformat())
-    return pd.DataFrame.from_records(list(rows), columns=list(COLUMNS))
+    return pd.DataFrame.from_records(rows, columns=list(COLUMNS))

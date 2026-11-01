@@ -68,13 +68,31 @@ def issued_at(city: dict, row: dict) -> str:
     return f"{stamp[:10]}T{clock}:00" if clock else stamp[:10]
 
 
-def fine_from_table(city: dict, fines: dict, row: dict) -> str | None:
+def place(city: dict, lat_raw: object, lon_raw: object) -> tuple[float | None, ...]:
+    """Both or neither; a point outside the city's box is a geocoding error."""
+    lat, lon = coordinate(lat_raw), coordinate(lon_raw)
+    box = city.get("bounds")
+    if lat is None or lon is None:
+        return None, None
+    if box and not (
+        box["lat"][0] <= lat <= box["lat"][1] and box["lon"][0] <= lon <= box["lon"][1]
+    ):
+        return None, None
+    return lat, lon
+
+
+def code_entry(city: dict, fines: dict | None, row: dict) -> dict:
+    """The code table's row for this ticket; empty when there is no table or code."""
+    if fines is None:
+        return {}
+    return fines.get(row.get(city["columns"]["violation_code"])) or {}
+
+
+def fine_from_table(city: dict, entry: dict, row: dict) -> str | None:
     lookup = city["fine_lookup"]
-    amounts = fines.get(row.get(city["columns"]["violation_code"]))
-    if amounts is None:
-        return None
     in_zone = row.get(lookup["zone_field"]) in lookup["zone_values"]
-    return amounts[lookup["zone_amount_field"] if in_zone else lookup["amount_field"]]
+    # Socrata leaves out empty fields, so a code without an amount has no key.
+    return entry.get(lookup["zone_amount_field"] if in_zone else lookup["amount_field"])
 
 
 def column_text(row: dict, source: str | list[str] | None) -> str | None:
@@ -100,18 +118,21 @@ def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
     def text(name: str) -> str | None:
         return column_text(row, col.get(name))
 
-    fine = fine_from_table(city, fines, row) if fines is not None else text("fine_usd")
+    entry = code_entry(city, fines, row)
+    fine = fine_from_table(city, entry, row) if fines is not None else text("fine_usd")
+    text_field = city.get("fine_lookup", {}).get("text_field")
+    lat, lon = place(city, text("lat"), text("lon"))
 
     return Ticket(
         city=city["slug"],
         source_id=required_text(row, col["source_id"]),
         issued_at=issued_at(city, row),
         violation_code=text("violation_code"),
-        violation_text=text("violation_text"),
+        violation_text=text("violation_text") or entry.get(text_field),
         group=groups.group_of(city["slug"], text(groups.group_key(city))),
         fine_usd=number(fine),
         location=text("location"),
-        lat=coordinate(text("lat")),
-        lon=coordinate(text("lon")),
+        lat=lat,
+        lon=lon,
         plate_state=text("plate_state"),
     )

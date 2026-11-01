@@ -18,3 +18,8 @@ location = "citation_location"
 lat = "latitude"
 lon = "longitude"
 plate_state = "vehicle_plate_state"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [37.70, 37.84]
+lon = [-122.52, -122.35]

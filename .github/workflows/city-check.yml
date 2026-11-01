@@ -15,7 +15,7 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          changed=$(git diff --name-only --diff-filter=AM "$BASE" HEAD -- 'src/parking_tickets/cities/*.toml')
+          changed=$(git diff --name-only --diff-filter=AMR "$BASE" HEAD -- 'src/parking_tickets/cities/*.toml')
           status=0
           for file in $changed; do
             uv run parking-tickets check-city "$(basename "$file" .toml)" || status=1

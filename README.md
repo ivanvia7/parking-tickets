@@ -47,11 +47,11 @@ Ready Parquet and gzipped CSV files (`.csv.gz`), one per city and year, are on t
 | `source_id` | the city's own ticket number; unique together with `city` |
 | `issued_at` | local time, ISO 8601; date only when the city's time is unreadable |
 | `violation_code` | the city's code as given |
-| `violation_text` | the city's description |
+| `violation_text` | the city's description; for New York, from its code table |
 | `group` | shared group from [`groups.csv`](src/parking_tickets/groups.csv), `other` when unknown |
 | `fine_usd` | fine in dollars; empty when the city does not publish it |
 | `location` | address or block as given |
-| `lat`, `lon` | empty when missing |
+| `lat`, `lon` | empty when missing or outside the city limits (a geocoding error) |
 | `plate_state` | two letters |
 
 Plate numbers are never stored.

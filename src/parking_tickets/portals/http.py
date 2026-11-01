@@ -40,9 +40,11 @@ def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> objec
         wait_turn(urlsplit(url).netloc)
         try:
             response = CLIENT.get(url, params=params, headers=headers)
-        except httpx.TransportError:
+        except httpx.TransportError as error:
             if attempt == ATTEMPTS:
-                raise
+                raise RuntimeError(
+                    f"{error!r} from {url} after {ATTEMPTS} tries"
+                ) from error
             time.sleep(RETRY_SECONDS * attempt)
             continue
         if response.status_code not in RETRY_STATUSES or attempt == ATTEMPTS:
@@ -52,4 +54,9 @@ def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> objec
         raise RuntimeError(
             f"{response.status_code} from {response.url}: {response.text[:300]}"
         )
-    return response.json()
+    try:
+        return response.json()
+    except ValueError as error:
+        raise RuntimeError(
+            f"not JSON from {response.url}: {response.text[:300]}"
+        ) from error

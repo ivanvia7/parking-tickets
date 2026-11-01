@@ -71,6 +71,8 @@ def check_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> Non
         )
     if not args.out:
         return
+    if not args.out.parent.is_dir():
+        parser.error(f"--out folder {args.out.parent} does not exist")
     if args.out.suffix not in export.WRITERS:
         parser.error(f"--out must end with one of {', '.join(export.WRITERS)}")
     if args.out.resolve() == args.cache.resolve():
@@ -121,4 +123,8 @@ def stats_command(parser: argparse.ArgumentParser, args: argparse.Namespace) -> 
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-    args.run(parser, args)
+    try:
+        args.run(parser, args)
+    except RuntimeError as error:
+        # Portal trouble is not a bug in this tool; one line says what failed where.
+        raise SystemExit(f"error: {error}") from None

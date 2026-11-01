@@ -24,7 +24,7 @@ def check_city(slug: str) -> tuple[int, int]:
     try:
         rows = SAMPLERS[city["portal"]](city, city_columns(city), SAMPLE_SIZE)
         table = fines.load_table(city)
-    except (RuntimeError, KeyError) as error:
+    except (RuntimeError, KeyError, ValueError) as error:
         raise RuntimeError(f"{where}: {error!r}") from error
     if not rows:
         raise RuntimeError(f"{where}: portal returned no rows")

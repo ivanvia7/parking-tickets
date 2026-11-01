@@ -20,3 +20,8 @@ location = "location"
 lat = "lat"
 lon = "lon"
 plate_state = "state"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [39.86, 40.14]
+lon = [-75.29, -74.95]
