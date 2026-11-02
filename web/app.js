@@ -19,7 +19,14 @@ export function hhmmpTime(value) {
   return `${String(hour).padStart(2, "0")}:${match[2]}`;
 }
 
-const TIME_FORMATS = { hmm: hmmTime, hhmmp: hhmmpTime };
+// '10:41' or '0:05' -> '00:05'; null when the city wrote something unreadable.
+export function hhColonMmTime(value) {
+  const match = /^(\d?\d):([0-5]\d)$/.exec(String(value)); // hour, minute
+  if (!match || Number(match[1]) > 23) return null;
+  return `${match[1].padStart(2, "0")}:${match[2]}`;
+}
+
+const TIME_FORMATS = { hmm: hmmTime, hhmmp: hhmmpTime, "hh:mm": hhColonMmTime };
 
 export function clock(city, value) {
   return value == null || value === "" ? null : TIME_FORMATS[city.time_format](value);
@@ -29,6 +36,14 @@ export function clock(city, value) {
 export function groupOf(city, code) {
   if (!code) return UNGROUPED;
   return city.groups[String(code).trim()] ?? UNGROUPED;
+}
+
+// Raw lat and lon; a point column holds GeoJSON coordinates [lon, lat].
+export function coords(city, row) {
+  const col = city.columns;
+  if (!col.point) return [row[col.lat], row[col.lon]];
+  const [lon, lat] = row[col.point]?.coordinates ?? [null, null];
+  return [lat, lon];
 }
 
 // Portals write 0 for "no location"; points outside the city are geocoding errors.
@@ -76,10 +91,14 @@ export function square(lat, lon, side) {
 
 const DOTS_SHOWN = 500;
 const ROW_LIMIT = 50000;
-const CENTERS = { la: [34.0505, -118.2550], sf: [37.7880, -122.4075], philadelphia: [39.9520, -75.1640] };
+const CENTERS = {
+  la: [34.0505, -118.2550], sf: [37.7880, -122.4075], philadelphia: [39.9520, -75.1640],
+  oakland: [37.8044, -122.2712], winnipeg: [49.8951, -97.1384], everett: [47.9790, -122.2070],
+};
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
-const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+// Winnipeg fines are Canadian dollars; en-US prints them as CA$.
+const money = (city) => new Intl.NumberFormat("en-US", { style: "currency", currency: city.currency ?? "USD", maximumFractionDigits: 0 });
 const count = new Intl.NumberFormat("en-US");
 
 const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;
@@ -88,6 +107,7 @@ const addDays = (day, days) => isoDay(new Date(Date.parse(`${day}T00:00:00Z`) + 
 
 // Cities publish late (NYC about 5 weeks) and keep a few stray late or typo rows,
 // so a period ends on the newest day that holds a full day's tickets among the newest rows.
+// A small city (Everett writes about 30 a day) sets its own full_day_tickets.
 // Reading the newest rows uses the portal's date index; a per-day GROUP BY took 59 s cold on SF.
 const FULL_DAY_TICKETS = 500;
 const NEWEST_ROWS = 2000;
@@ -107,7 +127,7 @@ async function newestDay(city) {
     perDay.set(day, (perDay.get(day) ?? 0) + 1);
   }
   let newest = null;
-  for (const [day, n] of perDay) if (n >= FULL_DAY_TICKETS && (newest == null || day > newest)) newest = day;
+  for (const [day, n] of perDay) if (n >= (city.full_day_tickets ?? FULL_DAY_TICKETS) && (newest == null || day > newest)) newest = day;
   return newest ?? until;
 }
 
@@ -166,8 +186,9 @@ function spotFilter(city, spot) {
     if (spot.house) where.push(`${house} = ${quote(spot.house)}`);
     return where.join(" AND ");
   }
-  const { lat, lon } = city.columns;
+  const { lat, lon, point } = city.columns;
   const { box } = spot;
+  if (point) return `within_box(${point}, ${box.lat[1]}, ${box.lon[0]}, ${box.lat[0]}, ${box.lon[1]})`;
   return `${lat} between ${box.lat[0]} and ${box.lat[1]} AND ${lon} between ${box.lon[0]} and ${box.lon[1]}`;
 }
 
@@ -217,6 +238,7 @@ async function byGroup(city, datasets, where) {
 }
 
 async function byHour(city, datasets, where) {
+  if (city.midnight_is_day_only) return null; // the day only, so no hours to count
   const hours = Array(24).fill(0);
   if (city.time_field) { // time is a text column; read each value once and bucket it here
     const rows = await query(city, datasets, {
@@ -246,12 +268,12 @@ async function byWeekday(city, datasets, where) {
 
 async function newestTickets(city, datasets, where) {
   const col = city.columns;
-  const wanted = [col.source_id, city.date_field, city.time_field, col.violation_text, col.fine_usd, col.lat, col.lon, col.location];
+  const wanted = [col.source_id, city.date_field, city.time_field, col.violation_text, col.fine_usd, col.lat, col.lon, col.point, col.location];
   const rows = await query(city, datasets, {
-    select: wanted.filter(Boolean).join(", "), where, order: `${city.date_field} DESC`, limit: DOTS_SHOWN,
+    select: [...new Set(wanted.filter(Boolean))].join(", "), where, // Winnipeg's code and text share a column order: `${city.date_field} DESC`, limit: DOTS_SHOWN,
   });
   return rows.map((row) => {
-    const [lat, lon] = place(city, row[col.lat], row[col.lon]);
+    const [lat, lon] = place(city, ...coords(city, row));
     return { row, lat, lon };
   }).filter((dot) => dot.lat != null);
 }
@@ -326,12 +348,14 @@ const page = {};
 
 function dotPopup(city, dataset, { row }) {
   const col = city.columns;
-  const time = city.time_field ? clock(city, row[city.time_field]) : String(row[city.date_field]).slice(11, 16);
+  const stamp = String(row[city.date_field]);
+  const dayOnly = city.midnight_is_day_only && stamp.slice(11, 19) === "00:00:00";
+  const time = city.time_field ? clock(city, row[city.time_field]) : dayOnly ? null : stamp.slice(11, 16);
   const fine = row[col.fine_usd];
   return el("div", {},
     el("strong", { textContent: `${String(row[city.date_field]).slice(0, 10)} ${time ?? ""}` }), el("br"),
     row[col.violation_text] ?? "", el("br"),
-    fine == null ? "" : usd.format(Number(fine)), " ",
+    fine == null ? "" : money(city).format(Number(fine)), " ",
     row[col.location] ?? "", el("br"),
     el("a", { href: rowUrl(city, dataset, row[col.source_id]), target: "_blank", rel: "noopener", textContent: "source" }));
 }
@@ -339,17 +363,20 @@ function dotPopup(city, dataset, { row }) {
 // Called after each step; hours and weekdays stay out until they arrive.
 function render(city, spotLabel, span, result) {
   const { tickets, total, noFine, top } = result.groups;
-  const timing = result.hours
-    ? [el("h3", { textContent: "By hour of day" }), bars(HOURS, result.hours, count.format),
-      el("h3", { textContent: "By weekday" }), bars(WEEKDAYS, result.days, count.format)]
+  const hourChart = result.hours
+    ? [el("h3", { textContent: "By hour of day" }), bars(HOURS, result.hours, count.format)]
+    : [el("p", { textContent: `${city.name} publishes the day of each ticket, not the time, so there is no hour chart.` })];
+  const timing = result.days
+    ? [...hourChart, el("h3", { textContent: "By weekday" }), bars(WEEKDAYS, result.days, count.format)]
     : [el("h3", { textContent: "Reading hours and weekdays..." })];
+  const hasFines = Boolean(city.columns.fine_usd || city.fine_lookup);
   page.answer.querySelector("h2").replaceChildren(spotLabel, " ",
     el("small", { textContent: `${span.since} to ${span.until}` }));
   const label = (group) => group.replaceAll("_", " ");
   page.answer.querySelector(".body").replaceChildren(
     el("div", { className: "totals" },
       el("div", {}, count.format(tickets), el("small", { textContent: "tickets" })),
-      el("div", {}, usd.format(total), el("small", { textContent: "total fines" }))),
+      hasFines ? el("div", {}, money(city).format(total), el("small", { textContent: "total fines" })) : null),
     el("h3", { textContent: "Top groups" }),
     bars(top.map(([group]) => label(group)), top.map(([, n]) => n),
       (n) => `${Math.round((100 * n) / Math.max(1, tickets))}%`),
@@ -357,6 +384,8 @@ function render(city, spotLabel, span, result) {
   const notes = [`Read live from ${city.host}, the same rows parking-tickets fetch reads.`];
   if (noFine) notes.push(`${count.format(noFine)} tickets have a code without a fine and add no money.`);
   if (city.last_day) notes.push(`${city.name} data stops ${city.last_day}.`);
+  if (!hasFines) notes.push(`${city.name} publishes no fine amounts.`);
+  if (city.currency) notes.push(`Fines in ${city.currency}.`);
   page.answer.querySelector(".note").textContent = notes.join(" ");
   page.answer.hidden = false;
 }
@@ -403,7 +432,7 @@ async function countSpot(spot, spotLabel) {
 }
 
 // NYC publishes no coordinates, so it is searched by street and house number instead of an address square.
-const searchesByStreet = (city) => !city.columns.lat;
+const searchesByStreet = (city) => !city.columns.lat && !city.columns.point;
 
 // Progress bar, dimmed old answer, pulsing box and a locked form while the portal works.
 function setBusy(on) {
@@ -649,10 +678,18 @@ async function pickCity() {
   page.status.textContent = `${action} ${covers}`;
 }
 
+// "Type an address in Everett, Los Angeles, or Oakland, or a street in New York City, ..." from cities.json.
+export function leadLine(cities) {
+  const names = (street) => new Intl.ListFormat("en", { type: "disjunction" })
+    .format(cities.filter((city) => searchesByStreet(city) === street).map((city) => city.name));
+  const streets = cities.some(searchesByStreet) ? `, or a street in ${names(true)}` : "";
+  return `Type an address in ${names(false)}${streets}, and see what tickets get written there, when, and for how much.`;
+}
+
 async function start() {
   const response = await fetch("cities.json");
   page.cities = await response.json();
-  for (const id of ["form", "status", "answer", "nearButton", "addressBox", "streetBox", "searchButton", "progress", "addressList", "streetList", "houseList"]) {
+  for (const id of ["form", "status", "answer", "nearButton", "addressBox", "streetBox", "searchButton", "progress", "addressList", "streetList", "houseList", "lead"]) {
     page[id] = document.getElementById(id);
   }
   page.map = L.map("map");
@@ -667,6 +704,7 @@ async function start() {
   for (const [slug, city] of Object.entries(page.cities)) {
     page.form.city.append(el("option", { value: slug, textContent: city.name }));
   }
+  page.lead.textContent = leadLine(Object.values(page.cities));
   page.form.city.value = "la";
   page.form.city.addEventListener("change", pickCity);
   page.form.addEventListener("submit", search);

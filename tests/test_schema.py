@@ -86,3 +86,20 @@ def test_point_inside_city_is_kept():
     }
     ticket = to_ticket(cities.load("la"), row)
     assert (ticket.lat, ticket.lon) == (34.05, -118.25)
+
+
+def test_point_column_gives_lat_and_lon():
+    city = cities.load("oakland")
+    row = {
+        "ticket_num": "1",
+        "ticket_iss": "2026-07-30T00:00:00.000",
+        "ticket_i_1": "9:05",
+        "the_geom": {"type": "Point", "coordinates": [-122.27, 37.8]},
+    }
+    ticket = to_ticket(city, row)
+    assert (ticket.lat, ticket.lon, ticket.issued_at) == (
+        37.8,
+        -122.27,
+        "2026-07-30T09:05:00",
+    )
+    assert to_ticket(city, {**row, "the_geom": None}).lat is None

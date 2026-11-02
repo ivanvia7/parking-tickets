@@ -14,3 +14,8 @@
 **Decided:** the address box suggests places while typing through Photon; Nominatim still geocodes typed text on submit. Reverses "address type-ahead" in the entry above.
 **Why:** readers expect suggestions; Photon is built for type-ahead, Nominatim forbids it.
 **Rules out:** suggestions from ticket addresses, whose spellings do not geocode.
+
+## 2026-11-02 — Point columns read as lat and lon
+**Decided:** a city file may name one GeoJSON `point` column instead of `lat` and `lon`; the package splits it and the page counts with `within_box`.
+**Why:** Oakland, Winnipeg and Everett publish only a point column.
+**Rules out:** new output columns for points.

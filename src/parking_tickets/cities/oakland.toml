@@ -1,0 +1,26 @@
+name = "Oakland"
+slug = "oakland"
+portal = "socrata"
+host = "data.oaklandca.gov"
+dataset = "58em-y96b"
+date_field = "ticket_iss"
+time_field = "ticket_i_1"
+time_format = "hh:mm"
+source_url = "https://data.oaklandca.gov/d/58em-y96b"
+license = "check on portal page"
+# The published table starts here.
+first_day = "2018-01-01"
+
+[columns]  # our column = city column
+source_id = "ticket_num"
+violation_code = "violation"
+violation_text = "violatio_1"
+fine_usd = "fine_amount"
+location = "location"
+# One GeoJSON point column instead of separate lat and lon columns.
+point = "the_geom"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [37.63, 37.89]
+lon = [-122.36, -122.11]

@@ -27,6 +27,7 @@ console.log(JSON.stringify(cases.map(([name, ...args]) => app[name](city, ...arg
 
 TIMES = ["904", "0904", "2359", "2400", "1260", "", "abc"]
 NYC_TIMES = ["1008P", "1200A", "1200P", "0145A", "1300P", "0960A", "1008", ""]
+OAKLAND_TIMES = ["10:41", "0:05", "23:59", "24:00", "10:60", "1041", "", "10:4"]
 POINTS = [
     ("34.05", "-118.25"),
     ("0", "-118.25"),
@@ -49,7 +50,7 @@ def run_page(city: dict, cases: list[list]) -> list:
 
 
 def test_times_match_schema() -> None:
-    for slug, values in (("la", TIMES), ("nyc", NYC_TIMES)):
+    for slug, values in (("la", TIMES), ("nyc", NYC_TIMES), ("oakland", OAKLAND_TIMES)):
         city = web_city(slug)
         expected = [
             schema.TIME_FORMATS[city["time_format"]](v) if v else None for v in values
@@ -70,6 +71,25 @@ def test_places_match_schema() -> None:
     city = web_city("la")
     expected = [list(schema.place(city, lat, lon)) for lat, lon in POINTS]
     assert run_page(city, [["place", lat, lon] for lat, lon in POINTS]) == expected
+
+
+# Separate lat and lon columns (LA) and one GeoJSON point column (Oakland).
+COORD_ROWS = {
+    "la": [{"loc_lat": "34.05", "loc_long": "-118.25"}, {"loc_lat": "34.05"}, {}],
+    "oakland": [
+        {"the_geom": {"type": "Point", "coordinates": [-122.27, 37.8]}},
+        {"the_geom": {"type": "Point", "coordinates": [165.99, -90]}},
+        {"the_geom": None},
+        {},
+    ],
+}
+
+
+def test_coords_match_schema() -> None:
+    for slug, rows in COORD_ROWS.items():
+        city = web_city(slug)
+        expected = [list(schema.coords(city, row)) for row in rows]
+        assert run_page(city, [["coords", row] for row in rows]) == expected
 
 
 def test_nyc_fines_and_datasets_match() -> None:
