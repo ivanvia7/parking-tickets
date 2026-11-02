@@ -424,6 +424,7 @@ function clickMap(event) {
   const lonHalf = HALF_BOX_DEGREES / Math.cos((lat * Math.PI) / 180);
   page.box.setBounds([[lat - HALF_BOX_DEGREES, lng - lonHalf], [lat + HALF_BOX_DEGREES, lng + lonHalf]]);
   page.box.addTo(page.map);
+  document.getElementById("mapHint").hidden = true;
   countSpot({ lat, lon: lng }, `Spot at ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
 }
 
