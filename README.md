@@ -1,8 +1,8 @@
 # parking-tickets
 
-Parking tickets from many US cities in one table: same columns, same violation groups, read straight from each city's open-data portal.
+Parking tickets from many US and Canadian cities in one table: same columns, same violation groups, read straight from each city's open-data portal.
 
-Today: Los Angeles, New York City, San Francisco and Philadelphia, over 240 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
+Today: Los Angeles, New York City, San Francisco, Philadelphia, Oakland, Winnipeg and Everett WA, over 245 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
 
 ```
 $ parking-tickets fetch --city la,sf,nyc --since 2025-06-03 --until 2025-06-03
@@ -43,13 +43,13 @@ Ready Parquet and gzipped CSV files (`.csv.gz`), one per city and year, are on t
 
 | Column | Meaning |
 |---|---|
-| `city` | slug: `la`, `nyc`, `sf`, `philadelphia` |
+| `city` | slug: `la`, `nyc`, `sf`, `philadelphia`, `oakland`, `winnipeg`, `everett` |
 | `source_id` | the city's own ticket number; unique together with `city` |
 | `issued_at` | local time, ISO 8601; date only when the city's time is unreadable |
 | `violation_code` | the city's code as given |
 | `violation_text` | the city's description; for New York, from its code table |
 | `group` | shared group from [`groups.csv`](src/parking_tickets/groups.csv), `other` when unknown |
-| `fine_usd` | fine in dollars; empty when the city does not publish it |
+| `fine_usd` | fine in dollars (Canadian for Winnipeg); empty when the city does not publish it |
 | `location` | address or block as given |
 | `lat`, `lon` | empty when missing or outside the city limits (a geocoding error) |
 | `plate_state` | two letters |
@@ -65,6 +65,9 @@ The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`,
 - San Francisco's data includes Muni fare evasion citations, group `transit_fare`.
 - Philadelphia publishes 2012 to 2017 only and has no violation code; its groups come from the description text.
 - New York fines come from the city's violation code table; tickets in Manhattan at or below 96th St get the higher fine, matched by police precinct.
+- Winnipeg fines are Canadian dollars, the full fine before the early-payment discount. Its tickets have no ticket number, so `source_id` is the portal's row id, and since mid-2020 they carry the day only.
+- Everett publishes no fine amounts; `fine_usd` is empty there.
+- Oakland publishes about three months late.
 - Days in the last 30 days are read again on every fetch, because cities keep adding late tickets.
 
 ## Commands

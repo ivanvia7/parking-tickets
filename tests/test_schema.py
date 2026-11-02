@@ -86,3 +86,28 @@ def test_point_inside_city_is_kept():
     }
     ticket = to_ticket(cities.load("la"), row)
     assert (ticket.lat, ticket.lon) == (34.05, -118.25)
+
+
+def test_point_column_gives_lat_and_lon():
+    city = cities.load("oakland")
+    row = {
+        "ticket_num": "1",
+        "ticket_iss": "2026-07-30T00:00:00.000",
+        "ticket_i_1": "9:05",
+        "the_geom": {"type": "Point", "coordinates": [-122.27, 37.8]},
+    }
+    ticket = to_ticket(city, row)
+    assert (ticket.lat, ticket.lon, ticket.issued_at) == (
+        37.8,
+        -122.27,
+        "2026-07-30T09:05:00",
+    )
+    assert to_ticket(city, {**row, "the_geom": None}).lat is None
+
+
+def test_midnight_is_the_day_only_where_the_city_says_so():
+    city = cities.load("winnipeg")
+    row = {":id": "row-1", "issue_date": "2026-09-25T00:00:00.000"}
+    assert to_ticket(city, row).issued_at == "2026-09-25"
+    timed = {**row, "issue_date": "2019-03-01T14:20:00.000"}
+    assert to_ticket(city, timed).issued_at == "2019-03-01T14:20:00"

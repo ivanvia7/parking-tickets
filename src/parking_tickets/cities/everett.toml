@@ -1,0 +1,27 @@
+name = "Everett"
+slug = "everett"
+portal = "socrata"
+host = "data.everettwa.gov"
+dataset = "j78y-rzpy"
+# Carries the time too, e.g. 2026-10-24T19:11:00.
+date_field = "date"
+# About 30 tickets on a weekday.
+full_day_tickets = 20
+source_url = "https://data.everettwa.gov/d/j78y-rzpy"
+license = "Public Domain"
+# The published table starts here.
+first_day = "2019-02-15"
+
+# No fine column: Everett publishes counts, not amounts.
+[columns]  # our column = city column
+source_id = "ticket"
+violation_code = "article"
+violation_text = "infraction_text"
+location = "block_address"
+point = "geocoded_column"
+plate_state = "state"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [47.87, 48.04]
+lon = [-122.30, -121.79]

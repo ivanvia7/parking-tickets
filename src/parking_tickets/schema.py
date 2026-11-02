@@ -51,7 +51,15 @@ def hhmmp_time(value: str) -> str | None:
     return f"{hour:02}:{match[2]}"
 
 
-TIME_FORMATS = {"hmm": hmm_time, "hhmmp": hhmmp_time}
+def hh_mm_time(value: str) -> str | None:
+    """'10:41' or '0:05' -> '00:05'; None when the city wrote something unreadable."""
+    match = re.fullmatch(r"(\d?\d):([0-5]\d)", value)
+    if not match or int(match[1]) > 23:
+        return None
+    return f"{int(match[1]):02}:{match[2]}"
+
+
+TIME_FORMATS = {"hmm": hmm_time, "hhmmp": hhmmp_time, "hh:mm": hh_mm_time}
 
 
 def issued_at(city: dict, row: dict) -> str:
@@ -60,6 +68,9 @@ def issued_at(city: dict, row: dict) -> str:
         raise ValueError(f"blank {city['date_field']}")
     stamp = raw[:19]
     time_field = city.get("time_field")
+    # Winnipeg writes the day only as midnight; a made-up time would mislead.
+    if city.get("midnight_is_day_only") and stamp.endswith("T00:00:00"):
+        return stamp[:10]
     if not time_field:
         return stamp
     time_raw = row.get(time_field)
@@ -78,6 +89,15 @@ def place(city: dict, lat_raw: object, lon_raw: object) -> tuple[float | None, .
         box["lat"][0] <= lat <= box["lat"][1] and box["lon"][0] <= lon <= box["lon"][1]
     ):
         return None, None
+    return lat, lon
+
+
+def coords(city: dict, row: dict) -> tuple[object, object]:
+    """Raw lat and lon; a point column holds GeoJSON coordinates [lon, lat]."""
+    col = city["columns"]
+    if "point" not in col:
+        return column_text(row, col.get("lat")), column_text(row, col.get("lon"))
+    lon, lat = (row.get(col["point"]) or {}).get("coordinates") or (None, None)
     return lat, lon
 
 
@@ -121,7 +141,7 @@ def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
     entry = code_entry(city, fines, row)
     fine = fine_from_table(city, entry, row) if fines is not None else text("fine_usd")
     text_field = city.get("fine_lookup", {}).get("text_field")
-    lat, lon = place(city, text("lat"), text("lon"))
+    lat, lon = place(city, *coords(city, row))
 
     return Ticket(
         city=city["slug"],

@@ -168,3 +168,126 @@ philadelphia,EXPIRED TAG,registration
 philadelphia,STREET CLEANING,street_cleaning
 sf,TRC7.2.101A,transit_fare
 sf,TRC7.2.60,meter
+oakland,10.28.240,no_parking
+oakland,10.28.250,no_parking
+oakland,10.16.110,no_parking
+oakland,21113.A,no_parking
+oakland,10.28.040A,no_parking
+oakland,10.28.040D,no_parking
+oakland,22500.G,no_parking
+oakland,22658.A,no_parking
+oakland,10.40.030B,no_parking
+oakland,10.28.160,no_parking
+oakland,22502,no_parking
+oakland,22511,no_parking
+oakland,22500,no_parking
+oakland,10.36.050,meter
+oakland,10.36.030B,meter
+oakland,10.36.020,meter
+oakland,10.36.100,meter
+oakland,10.36.060,meter
+oakland,10.40.020A1,no_stopping
+oakland,10.44.120A,permit
+oakland,10.40.060,loading_zone
+oakland,10.40.070,loading_zone
+oakland,22500.F,sidewalk
+oakland,10.28.190,time_limit
+oakland,10.28.210,time_limit
+oakland,10.28.180,time_limit
+oakland,10.40.020A4,time_limit
+oakland,22500.H,double_parking
+oakland,22514,hydrant
+oakland,22500.1,hydrant
+oakland,5200,plates
+oakland,5204,registration
+oakland,4000A,registration
+oakland,4000A1,registration
+oakland,21211.B,bike_lane
+oakland,22507.8A,disabled
+oakland,22507.8C,disabled
+oakland,22522,disabled
+oakland,22500.L,disabled
+oakland,22500.B,crosswalk
+oakland,10.40.090E,bus_zone
+oakland,22500.E,driveway
+winnipeg,P01Meter Expired,meter
+winnipeg,P02Meter Overtime,meter
+winnipeg,P06-No Stopping,no_stopping
+winnipeg,MP06-No Stopping,no_stopping
+winnipeg,P28No Prk/Stop St.Work/Spec.EVNT,no_stopping
+winnipeg,P64No Stop/Park in a taxi stand,no_stopping
+winnipeg,MP05- Overtime,time_limit
+winnipeg,P05Overtime,time_limit
+winnipeg,P72 R/S VEH OVERTIME,time_limit
+winnipeg,P16No Park,no_parking
+winnipeg,MP16-No Park,no_parking
+winnipeg,P69Annual Winter Route,no_parking
+winnipeg,P14Improperly Parking,no_parking
+winnipeg,MP24-Wrong Direction,no_parking
+winnipeg,P24Wrong Direction,no_parking
+winnipeg,P30Designated space,no_parking
+winnipeg,P04Oversized Vehicle,no_parking
+winnipeg,P17Too close to a traffic sign,no_parking
+winnipeg,P62 Veh on priv prop,no_parking
+winnipeg,P67 No park/stop carshare,no_parking
+winnipeg,P15Alley,no_parking
+winnipeg,P21Obstructing- vehicle,no_parking
+winnipeg,P54Abandoned/inoperable,registration
+winnipeg,P58Unplated/unregistered,registration
+winnipeg,P13Fire Hydrant,hydrant
+winnipeg,P26Fire Lane,hydrant
+winnipeg,MP26-Fire Lane,hydrant
+winnipeg,P12L/Z Overtime,loading_zone
+winnipeg,MP12L/Z Overtime,loading_zone
+winnipeg,P11L/Z no activity,loading_zone
+winnipeg,P71 NOT R/S VEH IN L/Z,loading_zone
+winnipeg,P09Too close/in an intersection,crosswalk
+winnipeg,P19Crosswalk (MRKD/UNMRKD),crosswalk
+winnipeg,P20Parked on a Boulevard,sidewalk
+winnipeg,MP20-Parked on a Boulevard,sidewalk
+winnipeg,P18Side walk,sidewalk
+winnipeg,P10Blocked driveway,driveway
+winnipeg,P25Blocking bike/ped path,bike_lane
+winnipeg,P07Disabled L/Z,disabled
+winnipeg,MP23-Double Parked,double_parking
+winnipeg,P23Double Parked,double_parking
+everett,46.28.200,time_limit
+everett,46.28.200-RV4,time_limit
+everett,46.28.200-RV7,time_limit
+everett,46.28.220,time_limit
+everett,46.28.220RV4,time_limit
+everett,46.28.035,plates
+everett,46.28.035RV4,plates
+everett,46.28.035RV7,plates
+everett,46.28.250,plates
+everett,46.28.250.F,plates
+everett,46.28.030,no_parking
+everett,46.28.030.2.D,no_parking
+everett,46.28.030.2DRV4,no_parking
+everett,46.28.040,no_parking
+everett,46.28.040.1,no_parking
+everett,46.28.040.2,no_parking
+everett,46.28.190,no_parking
+everett,46.28.210,no_parking
+everett,46.28.210.A,no_parking
+everett,46.28.210.C,no_parking
+everett,46.28.170,no_parking
+everett,46.28.050,no_parking
+everett,46.28.090A,no_parking
+everett,46.28.090B,no_parking
+everett,46.28.030.1.B,sidewalk
+everett,46.28.030.2.A,driveway
+everett,46.28.030.2.B,hydrant
+everett,46.28.030.2BRV7,hydrant
+everett,46.28.130,hydrant
+everett,46.28.130.1,hydrant
+everett,46.28.030.2.C,crosswalk
+everett,46.28.030.2CRV4,crosswalk
+everett,46.28.110,loading_zone
+everett,46.28.100,loading_zone
+everett,46.28.060,bus_zone
+everett,46.19.050(4),disabled
+everett,46.19.050(3),disabled
+everett,46.19.050(2),disabled
+everett,46.28.070,disabled
+everett,46.28.070.C.3,disabled

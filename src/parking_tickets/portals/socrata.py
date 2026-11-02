@@ -16,11 +16,12 @@ def resource_url(host: str, dataset: str) -> str:
     return f"https://{host}/resource/{dataset}.json"
 
 
-def read(host: str, dataset: str, where: str) -> Iterator[dict]:
+def read(host: str, dataset: str, where: str, select: str = "*") -> Iterator[dict]:
     offset = 0
 
     while True:
         params = {
+            "$select": select,
             "$where": where,
             "$order": ":id",
             "$limit": str(PAGE_SIZE),
@@ -58,8 +59,11 @@ def dataset_ids(city: dict, day: str) -> list[str]:
 
 def read_day(city: dict, day: str) -> Iterator[dict]:
     where = span_filter(city["date_field"], day, day)
+    # Winnipeg has no ticket number; the portal's row id stands in and is asked for by name.
+    source_id = city["columns"]["source_id"]
+    select = f"*, {source_id}" if source_id.startswith(":") else "*"
     for dataset in dataset_ids(city, day):
-        yield from read(city["host"], dataset, where)
+        yield from read(city["host"], dataset, where, select)
 
 
 def count_by(city: dict, column: str, since: str, until: str) -> dict[str | None, int]:
