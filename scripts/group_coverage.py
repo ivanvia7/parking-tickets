@@ -7,15 +7,13 @@ downloaded. Usage: uv run python scripts/group_coverage.py la 2025-06-01 2025-06
 import sys
 
 from parking_tickets import cities, groups
-from parking_tickets.portals import carto, socrata
-
-COUNTERS = {"socrata": socrata.count_by, "carto": carto.count_by}
+from parking_tickets.portals import PORTALS
 
 
 def coverage(slug: str, since: str, until: str) -> tuple[float, list[tuple]]:
     city = cities.load(slug)
     column = city["columns"][groups.group_key(city)]
-    counts = COUNTERS[city["portal"]](city, column, since, until)
+    counts = PORTALS[city["portal"]].count_by(city, column, since, until)
     total = sum(counts.values())
     if total == 0:
         raise SystemExit(f"{slug}: no tickets from {since} to {until}")

@@ -5,14 +5,14 @@
 export const UNGROUPED = "other";
 
 // '904' -> '09:04'; null when the city wrote something unreadable.
-export function hmmTime(value) {
+function hmmTime(value) {
   const digits = String(value).padStart(4, "0");
   if (!/^([01]\d|2[0-3])[0-5]\d$/.test(digits)) return null;
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
 // '1008P' -> '22:08'; null when the city wrote something unreadable.
-export function hhmmpTime(value) {
+function hhmmpTime(value) {
   const match = /^(\d\d)(\d\d)([AP])$/.exec(String(value)); // hour, minute, A or P
   if (!match || Number(match[1]) > 12 || Number(match[2]) > 59) return null;
   const hour = (Number(match[1]) % 12) + (match[3] === "P" ? 12 : 0);
@@ -20,7 +20,7 @@ export function hhmmpTime(value) {
 }
 
 // '10:41' or '0:05' -> '00:05'; null when the city wrote something unreadable.
-export function hhColonMmTime(value) {
+function hhColonMmTime(value) {
   const match = /^(\d?\d):([0-5]\d)$/.exec(String(value)); // hour, minute
   if (!match || Number(match[1]) > 23) return null;
   return `${match[1].padStart(2, "0")}:${match[2]}`;
@@ -80,7 +80,7 @@ export function datasetsFor(city, since, until) {
 // A square `side` meters wide centered on a spot; a degree of longitude shrinks away from the equator.
 const METERS_PER_DEGREE = 111320;
 
-export function square(lat, lon, side) {
+function square(lat, lon, side) {
   const latHalf = side / 2 / METERS_PER_DEGREE;
   const lonHalf = latHalf / Math.cos((lat * Math.PI) / 180);
   return { lat: [lat - latHalf, lat + latHalf], lon: [lon - lonHalf, lon + lonHalf] };
@@ -221,15 +221,16 @@ function dayFilter(city, { since, until }) {
   return `${field} >= '${since}T00:00:00' AND ${field} < '${addDays(until, 1)}T00:00:00'`;
 }
 
-let codeTable = null;
+const codeTables = new Map(); // fine table dataset -> code -> row
 async function fineTable(city) {
   const lookup = city.fine_lookup;
-  if (!codeTable) {
+  if (!codeTables.has(lookup.dataset)) {
     const rows = await query({ ...city, portal: "socrata", host: lookup.host }, [lookup.dataset], { select: "*" });
-    codeTable = {};
-    for (const row of rows) codeTable[row[lookup.code_field]] = row;
+    const table = {};
+    for (const row of rows) table[row[lookup.code_field]] = row;
+    codeTables.set(lookup.dataset, table);
   }
-  return codeTable;
+  return codeTables.get(lookup.dataset);
 }
 
 // Ticket count, fines and groups from a server-side GROUP BY; no rows are downloaded.
@@ -694,8 +695,10 @@ async function pickCity() {
   page.form.house.value = "";
   page.streetList.replaceChildren();
   page.houseList.replaceChildren();
+  const [firstYear, lastYear] = [Number(city.first_day.slice(0, 4)), Number(city.last_day?.slice(0, 4))];
+  const years = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => String(lastYear - index));
   const options = city.last_day
-    ? [2017, 2016, 2015, 2014, 2013, 2012].map((year) => [`year:${year}`, String(year)])
+    ? years.map((year) => [`year:${year}`, year])
     : [["30", "Last 30 days"], ["90", "Last 90 days"], ["365", "Last 365 days"]];
   page.form.period.replaceChildren(...options.map(([value, text]) => el("option", { value, textContent: text })));
   page.map.getContainer().hidden = isStreet;
@@ -725,12 +728,12 @@ async function pickCity() {
   const action = isStreet
     ? `${city.name} tickets carry no coordinates, so no square can hold them; type a street.`
     : "Type an address and pick a square size to count the tickets inside it.";
-  const covers = city.last_day ? `${city.name} data covers 2012 to 2017 only.` : `Newest ${city.name} data: ${city.newest}.`;
+  const covers = city.last_day ? `${city.name} data covers ${firstYear} to ${lastYear} only.` : `Newest ${city.name} data: ${city.newest}.`;
   page.status.textContent = `${action} ${covers}`;
 }
 
 // "Type an address in Everett, Los Angeles, or Oakland, or a street in New York City, ..." from cities.json.
-export function leadLine(cities) {
+function leadLine(cities) {
   const names = (street) => new Intl.ListFormat("en", { type: "disjunction" })
     .format(cities.filter((city) => searchesByStreet(city) === street).map((city) => city.name));
   const streets = cities.some(searchesByStreet) ? `, or a street in ${names(true)}` : "";

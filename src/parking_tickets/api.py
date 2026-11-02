@@ -9,13 +9,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from parking_tickets import cache, cities, export
-from parking_tickets.portals import carto, socrata
+from parking_tickets.portals import PORTALS, socrata
 from parking_tickets.schema import COLUMNS, Ticket, to_ticket
 
 if TYPE_CHECKING:
     import pandas
 
-PORTALS = {"socrata": socrata.read_day, "carto": carto.read_day}
 # Portals upload late: on 2026-11-01 LA had 4,741 tickets for 2026-10-30 against
 # about 7,300 on a full weekday. Days newer than this are re-read on every fetch.
 # Known limit: late NYC tickets still arrive months later; upgrade is `fetch --refresh`.
@@ -63,7 +62,7 @@ def parse_rows(
 def fetch_day(
     conn: sqlite3.Connection, city: dict, day: str, skipped: list[str]
 ) -> int:
-    rows = PORTALS[city["portal"]](city, day)
+    rows = PORTALS[city["portal"]].read_day(city, day)
     before = len(skipped)
     tickets = list(parse_rows(city, rows, load_table(city), skipped))
     # A day with skipped rows stays open, so a fixed city file can read it again.
