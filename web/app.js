@@ -602,7 +602,10 @@ function suggestAddresses() {
       if (turn !== addressTurn) return;
       const options = [];
       for (const { properties: found, geometry } of features) {
-        if (found.city !== city.name) continue; // the bounds also cover towns next door
+        // The bounds also cover towns next door, which Photon files with no district.
+        // An LA neighbourhood can come back as its own city, e.g. Sherman Oaks, with the same district.
+        const isNeighbourhood = found.district != null && found.district === found.city;
+        if (found.city !== city.name && !isNeighbourhood) continue;
         const street = [found.housenumber, found.street].filter(Boolean).join(" ");
         const label = [found.name, street, found.district ?? found.postcode].filter(Boolean).join(", ");
         if (page.places.has(label)) continue;
