@@ -12,6 +12,8 @@
   --border: #6f6f6f; --text: #f4f4f4; --text2: #c6c6c6; --helper: #a8a8a8;
   --link: #78a9ff; --blue: #0f62fe; --error: #fa4d56; }
 * { box-sizing: border-box; }
+/* .grid sets display, which would beat the hidden attribute and show NYC street boxes elsewhere. */
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--text);
   font: 400 14px/20px "IBM Plex Sans", system-ui, sans-serif; letter-spacing: .16px; }
 main { max-width: 960px; margin: 0 auto; padding: 48px 32px; }

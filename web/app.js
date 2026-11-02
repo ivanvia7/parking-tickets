@@ -351,6 +351,9 @@ async function countSpot(spot, spotLabel) {
   }
 }
 
+// NYC publishes no coordinates, so it is searched by street and house number instead of the map.
+const searchesByStreet = (city) => !city.columns.lat;
+
 // Progress bar, dimmed old answer, pulsing box and a locked form while the portal works.
 function setBusy(on) {
   page.running = on;
@@ -389,7 +392,7 @@ function suggestStreets() {
   clearTimeout(page.typing);
   const city = page.cities[page.form.city.value];
   const typed = page.form.street.value.trim().toUpperCase();
-  if (typed.length < 2 || !city.newest) return;
+  if (typed.length < 2 || !city.newest || !searchesByStreet(city)) return;
   const street = `upper(${city.columns.location[1]})`;
   page.typing = setTimeout(() => {
     const startsWith = quote(`${typed}%`);
@@ -403,7 +406,7 @@ function suggestHouses() {
   const city = page.cities[page.form.city.value];
   const typed = page.form.street.value.trim().toUpperCase();
   page.houseList.replaceChildren();
-  if (!typed || !city.newest) return;
+  if (!typed || !city.newest || !searchesByStreet(city)) return;
   const [house, street] = city.columns.location;
   const isNumber = (value) => /^\d/.test(value ?? ""); // NYC also writes E, W or N here
   const where = `upper(${street}) = ${quote(typed)}`;
@@ -426,6 +429,7 @@ function clickMap(event) {
 
 function countStreet(event) {
   event.preventDefault();
+  if (!searchesByStreet(page.cities[page.form.city.value])) return; // map cities count on click
   const street = page.form.street.value.trim();
   const house = page.form.house.value.trim();
   if (!street) {
@@ -449,7 +453,11 @@ function useLocation() {
 async function pickCity() {
   const slug = page.form.city.value;
   const city = page.cities[slug];
-  const isStreet = !city.columns.lat;
+  const isStreet = searchesByStreet(city);
+  page.form.street.value = "";
+  page.form.house.value = "";
+  page.streetList.replaceChildren();
+  page.houseList.replaceChildren();
   const options = city.last_day
     ? [2017, 2016, 2015, 2014, 2013, 2012].map((year) => [`year:${year}`, String(year)])
     : [["30", "Last 30 days"], ["90", "Last 90 days"], ["365", "Last 365 days"]];
