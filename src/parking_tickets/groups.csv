@@ -251,3 +251,43 @@ winnipeg,P25Blocking bike/ped path,bike_lane
 winnipeg,P07Disabled L/Z,disabled
 winnipeg,MP23-Double Parked,double_parking
 winnipeg,P23Double Parked,double_parking
+everett,46.28.200,time_limit
+everett,46.28.200-RV4,time_limit
+everett,46.28.200-RV7,time_limit
+everett,46.28.220,time_limit
+everett,46.28.220RV4,time_limit
+everett,46.28.035,plates
+everett,46.28.035RV4,plates
+everett,46.28.035RV7,plates
+everett,46.28.250,plates
+everett,46.28.250.F,plates
+everett,46.28.030,no_parking
+everett,46.28.030.2.D,no_parking
+everett,46.28.030.2DRV4,no_parking
+everett,46.28.040,no_parking
+everett,46.28.040.1,no_parking
+everett,46.28.040.2,no_parking
+everett,46.28.190,no_parking
+everett,46.28.210,no_parking
+everett,46.28.210.A,no_parking
+everett,46.28.210.C,no_parking
+everett,46.28.170,no_parking
+everett,46.28.050,no_parking
+everett,46.28.090A,no_parking
+everett,46.28.090B,no_parking
+everett,46.28.030.1.B,sidewalk
+everett,46.28.030.2.A,driveway
+everett,46.28.030.2.B,hydrant
+everett,46.28.030.2BRV7,hydrant
+everett,46.28.130,hydrant
+everett,46.28.130.1,hydrant
+everett,46.28.030.2.C,crosswalk
+everett,46.28.030.2CRV4,crosswalk
+everett,46.28.110,loading_zone
+everett,46.28.100,loading_zone
+everett,46.28.060,bus_zone
+everett,46.19.050(4),disabled
+everett,46.19.050(3),disabled
+everett,46.19.050(2),disabled
+everett,46.28.070,disabled
+everett,46.28.070.C.3,disabled
