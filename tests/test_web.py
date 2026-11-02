@@ -161,7 +161,12 @@ def test_nyc_fines_and_datasets_match() -> None:
         )
         for case in fines
     ]
-    days = ["2025-06-30", "2025-07-01", "2026-09-29"]
-    expected_sets = [socrata.dataset_ids(city, day) for day in days]
-    got = run_page(city, fines + [["datasetsFor", day, day] for day in days])
+    spans = [
+        ("2025-06-30", "2025-06-30"),
+        ("2025-07-01", "2025-07-01"),
+        ("2026-09-29", "2026-09-29"),
+        ("2025-06-01", "2026-08-31"),
+    ]
+    expected_sets = [socrata.dataset_ids(city, *span) for span in spans]
+    got = run_page(city, fines + [["datasetsFor", *span] for span in spans])
     assert got == expected_fines + expected_sets

@@ -24,6 +24,12 @@ def test_day_reads_its_fiscal_year_and_the_next():
     assert dataset_ids(city, "2026-08-01") == ["pvqr-7yc4"]
 
 
+def test_span_reads_every_fiscal_year_it_crosses():
+    city = cities.load("nyc")
+    span = dataset_ids(city, "2025-06-01", "2026-08-31")
+    assert span == ["m5vz-tzqv", "9mwx-gamw", "pvqr-7yc4"]
+
+
 def test_fine_comes_from_code_table_by_zone():
     city = cities.load("nyc")
     table = {
