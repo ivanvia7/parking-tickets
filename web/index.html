@@ -12,7 +12,7 @@
   --border: #6f6f6f; --text: #f4f4f4; --text2: #c6c6c6; --helper: #a8a8a8;
   --link: #78a9ff; --blue: #0f62fe; --error: #fa4d56; }
 * { box-sizing: border-box; }
-/* .grid sets display, which would beat the hidden attribute and show NYC street boxes elsewhere. */
+/* .grid sets display, which would beat the hidden attribute and show both search rows at once. */
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--text);
   font: 400 14px/20px "IBM Plex Sans", system-ui, sans-serif; letter-spacing: .16px; }
@@ -40,10 +40,6 @@ button:hover { background: #0050e6; } button:disabled { background: #525252; cur
 button.ghost { background: transparent; color: var(--link); }
 button.ghost:hover { background: var(--hover); }
 #map { height: 70vh; min-height: 420px; background: var(--bg); }
-/* Shown over the map until the first click, so a new reader knows the map is the search. */
-#mapHint { position: absolute; z-index: 1000; left: 50%; top: 16px; transform: translateX(-50%);
-  padding: 8px 16px; background: rgba(22, 22, 22, .9); border: 1px solid var(--link);
-  color: var(--text); pointer-events: none; width: max-content; max-width: 90%; text-align: center; }
 /* Dark map to match the page: invert the OSM tiles and turn the hues back. */
 .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) saturate(.25) brightness(.75) contrast(.9); }
 .status { padding: 16px; border-top: 1px solid var(--layer2); }
@@ -77,25 +73,35 @@ pre { margin: 8px 0 0; padding: 12px 16px; background: var(--layer2); overflow-x
 <main>
 <h1>Parking tickets</h1>
 <p class="lead">
-  Pick a spot in Los Angeles, San Francisco, New York City or Philadelphia and see what tickets get written there, when, and for how much.
+  Type an address in Los Angeles, San Francisco or Philadelphia, or a street in New York City, and see what tickets get written there, when, and for how much.
 </p>
 
 <section class="card">
-  <h2>Pick a spot <small>read live from each city's open data portal</small></h2>
+  <h2>Pick a place <small>read live from each city's open data portal</small></h2>
   <form id="form" class="body">
     <div class="grid">
       <label>City <select name="city"></select></label>
       <label>Period <select name="period"></select></label>
+    </div>
+    <div class="grid" id="addressBox">
+      <label>Address <input name="address" placeholder="e.g. 200 N Spring St" autocomplete="street-address"></label>
+      <label>Square size, side to side <select name="size">
+        <option value="100">100 m</option>
+        <option value="250" selected>250 m</option>
+        <option value="500">500 m</option>
+        <option value="1000">1 km</option>
+        <option value="2000">2 km</option>
+      </select></label>
     </div>
     <div class="grid" id="streetBox" hidden>
       <label>Street <input name="street" list="streetList" placeholder="e.g. Broadway" autocomplete="off"></label>
       <label>House number (optional) <input name="house" list="houseList" placeholder="e.g. 1501" autocomplete="off"></label>
     </div>
     <datalist id="streetList"></datalist><datalist id="houseList"></datalist>
-    <button type="submit" id="streetButton" hidden>Count tickets</button>
-    <button type="button" id="nearButton" class="ghost">Near me</button>
+    <button type="submit" id="searchButton">Count tickets</button>
+    <button type="button" id="nearButton" class="ghost">Use my location</button>
   </form>
-  <div id="map"><div id="mapHint">Click anywhere on the map to count tickets around that spot</div></div>
+  <div id="map"></div>
   <div class="progress" id="progress" hidden><span></span></div>
   <div class="status"><p id="status" role="status">Loading...</p></div>
 </section>

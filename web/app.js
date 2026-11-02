@@ -62,12 +62,18 @@ export function datasetsFor(city, since, until) {
   }
   return found;
 }
+// A square `side` meters wide centered on a spot; a degree of longitude shrinks away from the equator.
+const METERS_PER_DEGREE = 111320;
+
+export function square(lat, lon, side) {
+  const latHalf = side / 2 / METERS_PER_DEGREE;
+  const lonHalf = latHalf / Math.cos((lat * Math.PI) / 180);
+  return { lat: [lat - latHalf, lat + latHalf], lon: [lon - lonHalf, lon + lonHalf] };
+}
 
 
 // ---- Page: everything below talks to the portal and the DOM. ----
 
-// About 300 m wide around the clicked spot.
-const HALF_BOX_DEGREES = 0.00135;
 const DOTS_SHOWN = 500;
 const ROW_LIMIT = 50000;
 const CENTERS = { la: [34.0505, -118.2550], sf: [37.7880, -122.4075], philadelphia: [39.9520, -75.1640] };
@@ -160,10 +166,9 @@ function spotFilter(city, spot) {
     if (spot.house) where.push(`${house} = ${quote(spot.house)}`);
     return where.join(" AND ");
   }
-  const lonHalf = HALF_BOX_DEGREES / Math.cos((spot.lat * Math.PI) / 180);
   const { lat, lon } = city.columns;
-  return `${lat} between ${spot.lat - HALF_BOX_DEGREES} and ${spot.lat + HALF_BOX_DEGREES}`
-    + ` AND ${lon} between ${spot.lon - lonHalf} and ${spot.lon + lonHalf}`;
+  const { box } = spot;
+  return `${lat} between ${box.lat[0]} and ${box.lat[1]} AND ${lon} between ${box.lon[0]} and ${box.lon[1]}`;
 }
 
 function dayFilter(city, { since, until }) {
@@ -397,7 +402,7 @@ async function countSpot(spot, spotLabel) {
   }
 }
 
-// NYC publishes no coordinates, so it is searched by street and house number instead of the map.
+// NYC publishes no coordinates, so it is searched by street and house number instead of an address square.
 const searchesByStreet = (city) => !city.columns.lat;
 
 // Progress bar, dimmed old answer, pulsing box and a locked form while the portal works.
@@ -406,7 +411,7 @@ function setBusy(on) {
   page.progress.hidden = !on;
   page.answer.classList.toggle("loading", on);
   page.box.getElement()?.classList.toggle("box-searching", on);
-  page.streetButton.textContent = on ? "Counting..." : "Count tickets";
+  page.searchButton.textContent = on ? "Counting..." : "Count tickets";
   page.form.querySelectorAll("button").forEach((button) => { button.disabled = on; });
 }
 
@@ -460,23 +465,83 @@ function suggestHouses() {
     .catch((error) => console.warn("house suggestions failed:", error.message));
 }
 
-function clickMap(event) {
-  const city = page.cities[page.form.city.value];
-  const { lat, lng } = event.latlng;
-  if (place(city, lat, lng)[0] == null) {
+// Draws the square the reader asked for, fits the map to it and counts inside it.
+function countSquare(city, lat, lon, label) {
+  if (place(city, lat, lon)[0] == null) {
     page.status.textContent = `That spot is outside ${city.name}.`;
     return;
   }
-  const lonHalf = HALF_BOX_DEGREES / Math.cos((lat * Math.PI) / 180);
-  page.box.setBounds([[lat - HALF_BOX_DEGREES, lng - lonHalf], [lat + HALF_BOX_DEGREES, lng + lonHalf]]);
+  const box = square(lat, lon, Number(page.form.size.value));
+  page.box.setBounds([[box.lat[0], box.lon[0]], [box.lat[1], box.lon[1]]]);
   page.box.addTo(page.map);
-  document.getElementById("mapHint").hidden = true;
-  countSpot({ lat, lon: lng }, `Spot at ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+  page.map.fitBounds(page.box.getBounds());
+  countSpot({ box }, `${page.form.size.selectedOptions[0].textContent} square at ${label}`);
 }
 
-function countStreet(event) {
+// OpenStreetMap Nominatim, limited to the city's bounds. Its usage policy allows
+// 1 request a second and no type-ahead, so it runs only when the reader submits.
+const GEOCODER = "https://nominatim.openstreetmap.org/search";
+const GEOCODE_GAP_MS = 1000;
+let lastGeocode = 0;
+
+async function geocode(city, address) {
+  const wait = lastGeocode + GEOCODE_GAP_MS - Date.now();
+  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+  lastGeocode = Date.now();
+  const { lat, lon } = city.bounds;
+  const url = new URL(GEOCODER);
+  url.search = new URLSearchParams({
+    format: "jsonv2", limit: "1", q: address, viewbox: `${lon[0]},${lat[1]},${lon[1]},${lat[0]}`, bounded: "1",
+    addressdetails: "1",
+  });
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${response.status} from ${url.host}`);
+  const [found] = await response.json();
+  if (!found) return null;
+  // The bounds also cover towns next door, e.g. 600 S Broadway lands in Redondo Beach.
+  const inCity = found.address.city === city.name;
+  return { lat: Number(found.lat), lon: Number(found.lon), name: found.display_name, inCity };
+}
+
+async function countAddress(city) {
+  const address = page.form.address.value.trim();
+  if (!address) {
+    page.status.textContent = "Type an address.";
+    return;
+  }
+  setBusy(true);
+  page.status.textContent = `Finding ${address} in ${city.name}...`;
+  let found;
+  try {
+    found = await geocode(city, address);
+  } catch (error) {
+    page.status.textContent = `The address lookup did not answer: ${error.message}`;
+    return;
+  } finally {
+    setBusy(false);
+  }
+  if (page.form.city.value !== city.slug) return; // the reader switched city while we waited
+  if (!found) {
+    page.status.textContent = `No address "${address}" found in ${city.name}; nothing counted.`;
+    return;
+  }
+  const short = found.name.split(", ").slice(0, 3).join(", "); // the full name runs to county and country
+  if (!found.inCity) {
+    page.status.textContent = `The closest match, ${short}, is outside ${city.name}; nothing counted.`;
+    return;
+  }
+  countSquare(city, found.lat, found.lon, short);
+}
+
+function search(event) {
   event.preventDefault();
-  if (!searchesByStreet(page.cities[page.form.city.value])) return; // map cities count on click
+  if (page.running) return;
+  const city = page.cities[page.form.city.value];
+  if (searchesByStreet(city)) countStreet();
+  else countAddress(city);
+}
+
+function countStreet() {
   const street = page.form.street.value.trim();
   const house = page.form.house.value.trim();
   if (!street) {
@@ -490,8 +555,7 @@ function useLocation() {
   page.status.textContent = "Asking the browser for your location...";
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
-      page.map.setView([coords.latitude, coords.longitude], 17);
-      clickMap({ latlng: { lat: coords.latitude, lng: coords.longitude } });
+      countSquare(page.cities[page.form.city.value], coords.latitude, coords.longitude, "your location");
     },
     (error) => { page.status.textContent = `No location: ${error.message}`; },
   );
@@ -501,6 +565,7 @@ async function pickCity() {
   const slug = page.form.city.value;
   const city = page.cities[slug];
   const isStreet = searchesByStreet(city);
+  page.form.address.value = "";
   page.form.street.value = "";
   page.form.house.value = "";
   page.streetList.replaceChildren();
@@ -510,8 +575,8 @@ async function pickCity() {
     : [["30", "Last 30 days"], ["90", "Last 90 days"], ["365", "Last 365 days"]];
   page.form.period.replaceChildren(...options.map(([value, text]) => el("option", { value, textContent: text })));
   page.map.getContainer().hidden = isStreet;
+  page.addressBox.hidden = isStreet;
   page.streetBox.hidden = !isStreet;
-  page.streetButton.hidden = !isStreet;
   page.nearButton.hidden = isStreet;
   page.answer.hidden = true;
   page.dots.clearLayers();
@@ -534,8 +599,8 @@ async function pickCity() {
   }
   if (page.form.city.value !== slug) return; // the reader switched city while we waited
   const action = isStreet
-    ? `${city.name} publishes no coordinates; type a street.`
-    : "Click a spot on the map to count tickets in a box about 300 m wide.";
+    ? `${city.name} tickets carry no coordinates, so no square can hold them; type a street.`
+    : "Type an address and pick a square size to count the tickets inside it.";
   const covers = city.last_day ? `${city.name} data covers 2012 to 2017 only.` : `Newest ${city.name} data: ${city.newest}.`;
   page.status.textContent = `${action} ${covers}`;
 }
@@ -543,7 +608,7 @@ async function pickCity() {
 async function start() {
   const response = await fetch("cities.json");
   page.cities = await response.json();
-  for (const id of ["form", "status", "answer", "nearButton", "streetBox", "streetButton", "progress", "streetList", "houseList"]) {
+  for (const id of ["form", "status", "answer", "nearButton", "addressBox", "streetBox", "searchButton", "progress", "streetList", "houseList"]) {
     page[id] = document.getElementById(id);
   }
   page.map = L.map("map");
@@ -554,13 +619,12 @@ async function start() {
   }).addTo(page.map);
   page.dots = L.layerGroup().addTo(page.map);
   page.box = L.rectangle([[0, 0], [0, 0]], { color: "#78a9ff", weight: 1, fillOpacity: 0.1 });
-  page.map.on("click", clickMap);
   for (const [slug, city] of Object.entries(page.cities)) {
     page.form.city.append(el("option", { value: slug, textContent: city.name }));
   }
   page.form.city.value = "la";
   page.form.city.addEventListener("change", pickCity);
-  page.form.addEventListener("submit", countStreet);
+  page.form.addEventListener("submit", search);
   page.form.street.addEventListener("input", suggestStreets);
   page.form.street.addEventListener("change", suggestHouses);
   page.nearButton.addEventListener("click", useLocation);
