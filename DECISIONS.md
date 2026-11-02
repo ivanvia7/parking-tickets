@@ -39,3 +39,8 @@
 **Decided:** a Photon suggestion whose city equals its district (Sherman Oaks, Hollywood) is kept inside the city's bounds.
 **Why:** Photon files some LA addresses under the neighbourhood; towns next door carry no district.
 **Rules out:** a hand-kept neighbourhood list, Nominatim calls while typing.
+
+## 2026-11-02 — Page CSV leaves plate numbers out
+**Decided:** the page's CSV and row links ask only for the columns the city file names.
+**Why:** NYC and SF publish full plate numbers; the README promises none are handed out.
+**Rules out:** the portal's whole row via `select *`.
