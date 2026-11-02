@@ -44,3 +44,8 @@
 **Decided:** the page's CSV and row links ask only for the columns the city file names.
 **Why:** NYC and SF publish full plate numbers; the README promises none are handed out.
 **Rules out:** the portal's whole row via `select *`.
+
+## 2026-11-03 — Busy portals get 5 tries
+**Decided:** 5 tries per call, 120 second read timeout, and Carto's 400 query_wait_timeout counts as busy.
+**Why:** the 2026-11-02 release lost 13 of 85 year jobs to NYC read timeouts and a full Carto queue.
+**Rules out:** retrying every 400; a bad query still fails on the first answer.
