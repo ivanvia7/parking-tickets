@@ -81,23 +81,28 @@ const isoDay = (date) => date.toISOString().slice(0, 10);
 const addDays = (day, days) => isoDay(new Date(Date.parse(`${day}T00:00:00Z`) + days * 86400000));
 
 // Cities publish late (NYC about 5 weeks) and keep a few stray late or typo rows,
-// so a period ends on the newest day that has a full day's tickets.
+// so a period ends on the newest day that holds a full day's tickets among the newest rows.
+// Reading the newest rows uses the portal's date index; a per-day GROUP BY took 59 s cold on SF.
 const FULL_DAY_TICKETS = 500;
+const NEWEST_ROWS = 2000;
 const LOOKBACK_DAYS = 120;
 
 async function newestDay(city) {
   if (city.last_day) return city.last_day;
   const until = addDays(isoDay(new Date()), -1);
   const since = addDays(until, -LOOKBACK_DAYS);
-  const day = `date_trunc_ymd(${city.date_field})`;
   const rows = await query(city, datasetsFor(city, since, until), {
-    select: `${day} AS day_value, count(*) AS n`, where: dayFilter(city, { since, until }), group: day,
+    select: `${city.date_field} AS day_value`, where: dayFilter(city, { since, until }),
+    order: `${city.date_field} DESC`, limit: NEWEST_ROWS,
   });
   const perDay = new Map(); // a NYC day can come back from two datasets
-  for (const row of rows) perDay.set(row.day_value, (perDay.get(row.day_value) ?? 0) + Number(row.n));
+  for (const row of rows) {
+    const day = String(row.day_value).slice(0, 10);
+    perDay.set(day, (perDay.get(day) ?? 0) + 1);
+  }
   let newest = null;
-  for (const [value, n] of perDay) if (n >= FULL_DAY_TICKETS && (newest == null || value > newest)) newest = value;
-  return newest == null ? until : newest.slice(0, 10);
+  for (const [day, n] of perDay) if (n >= FULL_DAY_TICKETS && (newest == null || day > newest)) newest = day;
+  return newest ?? until;
 }
 
 // Days the reader picked, clamped to the city's first and newest day.
@@ -151,8 +156,7 @@ async function query(city, datasets, q) {
 function spotFilter(city, spot) {
   if (spot.street) {
     const [house, street] = city.columns.location;
-    const pattern = quote(`%${spot.street.toUpperCase()}%`);
-    const where = [`upper(${street}) like ${pattern}`];
+    const where = [`upper(${street}) = ${quote(spot.street.toUpperCase())}`];
     if (spot.house) where.push(`${house} = ${quote(spot.house)}`);
     return where.join(" AND ");
   }
@@ -282,8 +286,13 @@ function dotPopup(city, dataset, { row }) {
     el("a", { href: rowUrl(city, dataset, row[col.source_id]), target: "_blank", rel: "noopener", textContent: "source" }));
 }
 
+// Called after each step; hours and weekdays stay out until they arrive.
 function render(city, spotLabel, span, result) {
   const { tickets, total, noFine, top } = result.groups;
+  const timing = result.hours
+    ? [el("h3", { textContent: "By hour of day" }), bars(HOURS, result.hours, count.format),
+      el("h3", { textContent: "By weekday" }), bars(WEEKDAYS, result.days, count.format)]
+    : [el("h3", { textContent: "Reading hours and weekdays..." })];
   page.answer.querySelector("h2").replaceChildren(spotLabel, " ",
     el("small", { textContent: `${span.since} to ${span.until}` }));
   const label = (group) => group.replaceAll("_", " ");
@@ -294,10 +303,7 @@ function render(city, spotLabel, span, result) {
     el("h3", { textContent: "Top groups" }),
     bars(top.map(([group]) => label(group)), top.map(([, n]) => n),
       (n) => `${Math.round((100 * n) / Math.max(1, tickets))}%`),
-    el("h3", { textContent: "By hour of day" }),
-    bars(HOURS, result.hours, count.format),
-    el("h3", { textContent: "By weekday" }),
-    bars(WEEKDAYS, result.days, count.format));
+    ...timing);
   const notes = [`Read live from ${city.host}, the same rows parking-tickets fetch reads.`];
   if (noFine) notes.push(`${count.format(noFine)} tickets have a code without a fine and add no money.`);
   if (city.last_day) notes.push(`${city.name} data stops ${city.last_day}.`);
@@ -312,33 +318,97 @@ async function countSpot(spot, spotLabel) {
   const span = period(city, page.form.period.value);
   const datasets = datasetsFor(city, span.since, span.until);
   const where = `${dayFilter(city, span)} AND ${spotFilter(city, spot)}`;
-  page.running = true;
-  page.form.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+  setBusy(true);
   page.dots.clearLayers();
   const started = performance.now();
+  const steps = spot.street ? 3 : 4;
   try {
-    page.status.textContent = `Counting tickets in ${city.name}, ${span.since} to ${span.until}...`;
+    page.status.textContent = `Step 1 of ${steps}: counting tickets and fines, ${span.since} to ${span.until}...`;
     const groups = await byGroup(city, datasets, where);
-    page.status.textContent = "Reading hours and weekdays...";
+    render(city, spotLabel, span, { groups });
+    page.answer.classList.remove("loading");
+    page.status.textContent = `Step 2 of ${steps}: reading hours of day...`;
     const hours = await byHour(city, datasets, where);
+    page.status.textContent = `Step 3 of ${steps}: reading weekdays...`;
     const days = await byWeekday(city, datasets, where);
     render(city, spotLabel, span, { groups, hours, days });
     if (!spot.street) {
-      page.status.textContent = "Placing the newest tickets on the map...";
+      page.status.textContent = `Step 4 of ${steps}: placing the newest tickets on the map...`;
       for (const dot of await newestTickets(city, [datasets.at(-1)], where)) {
         L.circleMarker([dot.lat, dot.lon], { radius: 5, color: "#fff", weight: 1.5, fillColor: "#ff3b45", fillOpacity: 1 })
           .bindPopup(() => dotPopup(city, datasets.at(-1), dot)).addTo(page.dots);
       }
     }
     const seconds = ((performance.now() - started) / 1000).toFixed(1);
-    const exactMiss = spot.house && groups.tickets === 0 ? " None at that exact house number; try the street alone." : "";
+    const exactMiss = spot.house && groups.tickets === 0
+      ? " None at that exact house number; pick one from the list or try the street alone."
+      : "";
     page.status.textContent = `${count.format(groups.tickets)} tickets, read in ${seconds} s.${exactMiss}`;
   } catch (error) {
     page.status.textContent = `The city portal did not answer: ${error.message}`;
   } finally {
-    page.running = false;
-    page.form.querySelectorAll("button").forEach((button) => { button.disabled = false; });
+    setBusy(false);
   }
+}
+
+// Progress bar, dimmed old answer, pulsing box and a locked form while the portal works.
+function setBusy(on) {
+  page.running = on;
+  page.progress.hidden = !on;
+  page.answer.classList.toggle("loading", on);
+  page.box.getElement()?.classList.toggle("box-searching", on);
+  page.streetButton.textContent = on ? "Counting..." : "Count tickets";
+  page.form.querySelectorAll("button").forEach((button) => { button.disabled = on; });
+}
+
+// Street and house suggestions come from the city's own tickets, busiest first.
+const SUGGESTIONS = 8;
+const SUGGEST_DAYS = 7;
+const TYPE_PAUSE_MS = 250;
+let suggestTurn = 0;
+
+async function suggest(city, { list, select, where, days, keep }) {
+  const turn = ++suggestTurn; // a slower, older answer must not overwrite a newer one
+  const span = { since: addDays(city.newest, 1 - days), until: city.newest };
+  const rows = await query(city, datasetsFor(city, span.since, span.until), {
+    select: `${select} AS value, count(*) AS n`, where: `${dayFilter(city, span)} AND ${where}`,
+    group: select, order: "n DESC", limit: SUGGESTIONS * 4,
+  });
+  if (turn !== suggestTurn) return;
+  const counts = new Map(); // a NYC day can come back from two datasets
+  for (const row of rows) {
+    if (keep(row.value)) counts.set(row.value, (counts.get(row.value) ?? 0) + Number(row.n));
+  }
+  const ranked = [...counts].sort((a, b) => b[1] - a[1]);
+  const options = ranked.slice(0, SUGGESTIONS).map(([value, n]) =>
+    el("option", { value, label: `${count.format(n)} tickets in ${days} days` }));
+  list.replaceChildren(...options);
+}
+
+function suggestStreets() {
+  clearTimeout(page.typing);
+  const city = page.cities[page.form.city.value];
+  const typed = page.form.street.value.trim().toUpperCase();
+  if (typed.length < 2 || !city.newest) return;
+  const street = `upper(${city.columns.location[1]})`;
+  page.typing = setTimeout(() => {
+    const startsWith = quote(`${typed}%`);
+    const where = `${street} like ${startsWith}`;
+    suggest(city, { list: page.streetList, select: street, where, days: SUGGEST_DAYS, keep: Boolean })
+      .catch((error) => console.warn("street suggestions failed:", error.message)); // the count still works
+  }, TYPE_PAUSE_MS);
+}
+
+function suggestHouses() {
+  const city = page.cities[page.form.city.value];
+  const typed = page.form.street.value.trim().toUpperCase();
+  page.houseList.replaceChildren();
+  if (!typed || !city.newest) return;
+  const [house, street] = city.columns.location;
+  const isNumber = (value) => /^\d/.test(value ?? ""); // NYC also writes E, W or N here
+  const where = `upper(${street}) = ${quote(typed)}`;
+  suggest(city, { list: page.houseList, select: house, where, days: 30, keep: isNumber })
+    .catch((error) => console.warn("house suggestions failed:", error.message));
 }
 
 function clickMap(event) {
@@ -397,11 +467,14 @@ async function pickCity() {
   }
   if (!city.newest) {
     page.status.textContent = `Finding the newest day ${city.name} has published...`;
+    page.progress.hidden = false;
     try {
       city.newest = await newestDay(city);
     } catch (error) {
       page.status.textContent = `The city portal did not answer: ${error.message}`;
       return;
+    } finally {
+      page.progress.hidden = true;
     }
   }
   if (page.form.city.value !== slug) return; // the reader switched city while we waited
@@ -415,7 +488,7 @@ async function pickCity() {
 async function start() {
   const response = await fetch("cities.json");
   page.cities = await response.json();
-  for (const id of ["form", "status", "answer", "nearButton", "streetBox", "streetButton"]) {
+  for (const id of ["form", "status", "answer", "nearButton", "streetBox", "streetButton", "progress", "streetList", "houseList"]) {
     page[id] = document.getElementById(id);
   }
   page.map = L.map("map");
@@ -433,6 +506,8 @@ async function start() {
   page.form.city.value = "la";
   page.form.city.addEventListener("change", pickCity);
   page.form.addEventListener("submit", countStreet);
+  page.form.street.addEventListener("input", suggestStreets);
+  page.form.street.addEventListener("change", suggestHouses);
   page.nearButton.addEventListener("click", useLocation);
   pickCity();
 }
