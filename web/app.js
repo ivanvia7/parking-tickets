@@ -418,8 +418,9 @@ async function start() {
     page[id] = document.getElementById(id);
   }
   page.map = L.map("map");
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  // CARTO's dark tiles now need an API key; OSM tiles need none and are darkened in CSS.
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
   }).addTo(page.map);
   page.dots = L.layerGroup().addTo(page.map);

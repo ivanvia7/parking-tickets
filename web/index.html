@@ -38,6 +38,8 @@ button:hover { background: #0050e6; } button:disabled { background: #525252; cur
 button.ghost { background: transparent; color: var(--link); }
 button.ghost:hover { background: var(--hover); }
 #map { height: 420px; background: var(--bg); }
+/* Dark map to match the page: invert the OSM tiles and turn the hues back. */
+.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9); }
 .status { padding: 16px; border-top: 1px solid var(--layer2); }
 .status p { margin: 0; color: var(--text2); }
 .totals { display: flex; gap: 32px; flex-wrap: wrap; }
