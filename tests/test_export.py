@@ -31,7 +31,7 @@ def test_every_format_keeps_row_count(conn, tmp_path, suffix):
             sqlite3.connect(out).execute("SELECT count(*) FROM tickets").fetchone()[0]
         )
     else:
-        count = duckdb.sql(f"SELECT count(*) FROM '{out}'").fetchall()[0][0]
+        count = duckdb.execute(f"SELECT count(*) FROM '{out}'").fetchall()[0][0]
     assert count == len(FIXTURE)
 
 
@@ -63,6 +63,6 @@ def test_until_day_keeps_last_second_and_date_only_rows(tmp_path):
 def test_parquet_path_with_quote(conn, tmp_path):
     out = tmp_path / "Bob's.parquet"
     export.export(conn, ["la"], "2025-06-03", "2025-06-03", out)
-    assert duckdb.sql(f"SELECT count(*) FROM {export.sql_text(out)}").fetchall()[0][
+    assert duckdb.execute(f"SELECT count(*) FROM {export.sql_text(out)}").fetchall()[0][
         0
     ] == len(FIXTURE)

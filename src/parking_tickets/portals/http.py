@@ -1,5 +1,6 @@
 import time
 from importlib.metadata import version
+from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
@@ -37,8 +38,9 @@ def retry_delay(response: httpx.Response, attempt: int) -> float:
     return min(wait, MAX_RETRY_SECONDS)
 
 
-def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> object:
-    for attempt in range(1, ATTEMPTS + 1):
+def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> Any:
+    attempt = 1
+    while True:
         wait_turn(urlsplit(url).netloc)
         try:
             response = CLIENT.get(url, params=params, headers=headers)
@@ -48,10 +50,11 @@ def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> objec
                     f"{error!r} from {url} after {ATTEMPTS} tries"
                 ) from error
             time.sleep(RETRY_SECONDS * attempt)
-            continue
-        if response.status_code not in RETRY_STATUSES or attempt == ATTEMPTS:
-            break
-        time.sleep(retry_delay(response, attempt))
+        else:
+            if response.status_code not in RETRY_STATUSES or attempt == ATTEMPTS:
+                break
+            time.sleep(retry_delay(response, attempt))
+        attempt += 1
     if response.is_error:
         raise RuntimeError(
             f"{response.status_code} from {response.url}: {response.text[:300]}"

@@ -39,6 +39,7 @@ POINTS = [
 
 
 def run_page(city: dict, cases: list[list]) -> list:
+    assert NODE
     script = SCRIPT % (ROOT / "web" / "app.js").as_uri()
     done = subprocess.run(
         [NODE, "--input-type=module", "-e", script],

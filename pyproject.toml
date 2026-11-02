@@ -42,10 +42,17 @@ build-backend = "uv_build"
 dev = [
     "duckdb>=1.5.6",
     "pandas>=3.1.0",
+    "pyright>=1.1.414",
     "pytest>=9.2.0",
     "respx>=0.23.1",
     "ruff>=0.17.3",
 ]
+
+[tool.pyright]
+include = ["src", "scripts", "tests"]
+# tests import scripts/build_web.py and scripts/publish.py by path.
+extraPaths = ["scripts"]
+pythonVersion = "3.11"
 
 [tool.ruff.lint]
 # Defaults plus bugbear, import order, pyupgrade, simplify, pylint and naming rules.

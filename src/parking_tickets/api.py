@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from contextlib import closing
 from datetime import date, timedelta
 from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 from parking_tickets import cache, cities, export
@@ -87,7 +88,7 @@ def fetch(
     return fetched, skipped
 
 
-def import_pandas() -> "pandas":
+def import_pandas() -> ModuleType:
     try:
         import pandas
     except ImportError:

@@ -22,8 +22,9 @@ KNOWN_GROUPS = {
 
 
 def csv_rows() -> list[dict]:
-    with groups.GROUPS_FILE.open(encoding="utf-8", newline="") as file:
-        return list(csv.DictReader(file))
+    return list(
+        csv.DictReader(groups.GROUPS_FILE.read_text(encoding="utf-8").splitlines())
+    )
 
 
 def test_groups_csv_uses_known_groups_and_cities():

@@ -9,11 +9,11 @@ UNGROUPED = "other"
 @cache
 def table() -> dict[tuple[str, str], str]:
     """(city slug, city code) -> shared group, read once from groups.csv."""
-    with GROUPS_FILE.open(encoding="utf-8", newline="") as file:
-        return {
-            (row["city"], row["code"].strip()): row["group"]
-            for row in csv.DictReader(file)
-        }
+    lines = GROUPS_FILE.read_text(encoding="utf-8").splitlines()
+    return {
+        (row["city"], row["code"].strip()): row["group"]
+        for row in csv.DictReader(lines)
+    }
 
 
 def group_of(slug: str, code: str | None) -> str:
