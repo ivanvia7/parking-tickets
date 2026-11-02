@@ -11,6 +11,7 @@ ROOT = Path(__file__).parent.parent
 spec = importlib.util.spec_from_file_location(
     "publish", ROOT / "scripts" / "publish.py"
 )
+assert spec and spec.loader
 publish = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(publish)
 

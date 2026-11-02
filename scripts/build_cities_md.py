@@ -8,9 +8,8 @@ from datetime import date
 from pathlib import Path
 
 from parking_tickets import cities
-from parking_tickets.portals import carto, socrata
+from parking_tickets.portals import PORTALS
 
-SUMMARIES = {"socrata": socrata.summary, "carto": carto.summary}
 OUT = Path(__file__).resolve().parent.parent / "CITIES.md"
 HEADER = """# Cities
 
@@ -26,7 +25,7 @@ a few typo dates in the past (such as 1950) remain, so a first date can look too
 def city_line(slug: str, today: str) -> str:
     city = cities.load(slug)
     try:
-        rows, first, last = SUMMARIES[city["portal"]](city)
+        rows, first, last = PORTALS[city["portal"]].summary(city)
     except RuntimeError as error:
         raise RuntimeError(f"{slug} ({city['host']}): {error}") from error
     return (

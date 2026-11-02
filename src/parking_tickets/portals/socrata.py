@@ -46,15 +46,17 @@ def fiscal_year(day: str, start_month: int) -> int:
     return year + 1 if month >= start_month else year
 
 
-def dataset_ids(city: dict, day: str) -> list[str]:
+def dataset_ids(city: dict, since: str, until: str | None = None) -> list[str]:
+    """Datasets holding days since..until; until defaults to since."""
     if "dataset" in city:
         return [city["dataset"]]
     # Late tickets land in the next fiscal year's dataset, so read both.
-    year = fiscal_year(day, city["fiscal_year_start_month"])
+    start = city["fiscal_year_start_month"]
+    first, last = fiscal_year(since, start), fiscal_year(until or since, start)
     by_year = city["datasets_by_fiscal_year"]
-    if str(year) not in by_year:
-        raise ValueError(f"no dataset listed for fiscal year {year}")
-    return [by_year[str(y)] for y in (year, year + 1) if str(y) in by_year]
+    if str(first) not in by_year:
+        raise ValueError(f"no dataset listed for fiscal year {first}")
+    return [by_year[str(y)] for y in range(first, last + 2) if str(y) in by_year]
 
 
 def read_day(city: dict, day: str) -> Iterator[dict]:
@@ -75,7 +77,7 @@ def count_by(city: dict, column: str, since: str, until: str) -> dict[str | None
         "$limit": str(PAGE_SIZE),
     }
     counts: dict[str | None, int] = {}
-    for dataset in dataset_ids(city, since):
+    for dataset in dataset_ids(city, since, until):
         url = resource_url(city["host"], dataset)
         for row in get_json(url, params, auth_headers()):
             key = row.get(column)

@@ -29,3 +29,13 @@
 **Decided:** Cambridge MA, Edmonton, Norfolk, Montgomery County MD and Chicago are not added.
 **Why:** no coordinates, no fines, data older than a year, or FOIA only.
 **Rules out:** street-only cities beyond NYC for now.
+
+## 2026-11-02 — Newest day must be complete, not just busy
+**Decided:** "Last N days" ends on the newest day holding 4/5 of its weekday's usual count, read per day over 4 weeks.
+**Why:** LA, SF and NYC upload a day in parts; SF's newest day held 549 of about 5,000.
+**Rules out:** one fixed ticket floor for every city.
+
+## 2026-11-02 — Neighbourhood suggestions count as the city
+**Decided:** a Photon suggestion whose city equals its district (Sherman Oaks, Hollywood) is kept inside the city's bounds.
+**Why:** Photon files some LA addresses under the neighbourhood; towns next door carry no district.
+**Rules out:** a hand-kept neighbourhood list, Nominatim calls while typing.

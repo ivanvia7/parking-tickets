@@ -1,8 +1,7 @@
-from parking_tickets import api, cities, fines
-from parking_tickets.portals import carto, socrata
+from parking_tickets import api, cities
+from parking_tickets.portals import PORTALS
 
 SAMPLE_SIZE = 100
-SAMPLERS = {"socrata": socrata.sample, "carto": carto.sample}
 
 
 def city_columns(city: dict) -> list[str]:
@@ -22,8 +21,8 @@ def check_city(slug: str) -> tuple[int, int]:
     city = cities.load(slug)
     where = f"{slug} ({city['host']} {city.get('dataset', 'fiscal-year datasets')})"
     try:
-        rows = SAMPLERS[city["portal"]](city, city_columns(city), SAMPLE_SIZE)
-        table = fines.load_table(city)
+        rows = PORTALS[city["portal"]].sample(city, city_columns(city), SAMPLE_SIZE)
+        table = api.load_table(city)
     except (RuntimeError, KeyError, ValueError) as error:
         raise RuntimeError(f"{where}: {error!r}") from error
     if not rows:

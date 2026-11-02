@@ -16,5 +16,5 @@ Then run `uv run python scripts/build_cities_md.py` and open a pull request. The
 
 - Never store plate numbers.
 - City differences go in the city file or `groups.csv`, not in Python code.
-- Tests run offline: `uv run pytest`. Lint: `uv run ruff check` and `uv run ruff format`.
+- Tests run offline: `uv run pytest`. Lint: `uv run ruff check` and `uv run ruff format`. Types: `uv run pyright`. Page lint: `npm ci` then `npm run lint`.
 - A new code path gets a test, including its odd input: a blank field, an unknown code, a missing file.

@@ -22,13 +22,13 @@ class Ticket:
 COLUMNS = tuple(f.name for f in fields(Ticket))
 
 
-def number(value: object) -> float | None:
+def number(value: str | float | None) -> float | None:
     if value in (None, ""):
         return None
     return float(value)
 
 
-def coordinate(value: object) -> float | None:
+def coordinate(value: str | float | None) -> float | None:
     # Portals write 0 for "no location"; no ticket is issued at 0,0.
     parsed = number(value)
     return None if parsed == 0 else parsed
@@ -79,7 +79,9 @@ def issued_at(city: dict, row: dict) -> str:
     return f"{stamp[:10]}T{clock}:00" if clock else stamp[:10]
 
 
-def place(city: dict, lat_raw: object, lon_raw: object) -> tuple[float | None, ...]:
+def place(
+    city: dict, lat_raw: str | float | None, lon_raw: str | float | None
+) -> tuple[float | None, ...]:
     """Both or neither; a point outside the city's box is a geocoding error."""
     lat, lon = coordinate(lat_raw), coordinate(lon_raw)
     box = city.get("bounds")
@@ -92,7 +94,7 @@ def place(city: dict, lat_raw: object, lon_raw: object) -> tuple[float | None, .
     return lat, lon
 
 
-def coords(city: dict, row: dict) -> tuple[object, object]:
+def coords(city: dict, row: dict) -> tuple[str | float | None, str | float | None]:
     """Raw lat and lon; a point column holds GeoJSON coordinates [lon, lat]."""
     col = city["columns"]
     if "point" not in col:

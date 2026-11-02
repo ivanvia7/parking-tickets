@@ -5,14 +5,14 @@
 export const UNGROUPED = "other";
 
 // '904' -> '09:04'; null when the city wrote something unreadable.
-export function hmmTime(value) {
+function hmmTime(value) {
   const digits = String(value).padStart(4, "0");
   if (!/^([01]\d|2[0-3])[0-5]\d$/.test(digits)) return null;
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
 // '1008P' -> '22:08'; null when the city wrote something unreadable.
-export function hhmmpTime(value) {
+function hhmmpTime(value) {
   const match = /^(\d\d)(\d\d)([AP])$/.exec(String(value)); // hour, minute, A or P
   if (!match || Number(match[1]) > 12 || Number(match[2]) > 59) return null;
   const hour = (Number(match[1]) % 12) + (match[3] === "P" ? 12 : 0);
@@ -20,7 +20,7 @@ export function hhmmpTime(value) {
 }
 
 // '10:41' or '0:05' -> '00:05'; null when the city wrote something unreadable.
-export function hhColonMmTime(value) {
+function hhColonMmTime(value) {
   const match = /^(\d?\d):([0-5]\d)$/.exec(String(value)); // hour, minute
   if (!match || Number(match[1]) > 23) return null;
   return `${match[1].padStart(2, "0")}:${match[2]}`;
@@ -80,7 +80,7 @@ export function datasetsFor(city, since, until) {
 // A square `side` meters wide centered on a spot; a degree of longitude shrinks away from the equator.
 const METERS_PER_DEGREE = 111320;
 
-export function square(lat, lon, side) {
+function square(lat, lon, side) {
   const latHalf = side / 2 / METERS_PER_DEGREE;
   const lonHalf = latHalf / Math.cos((lat * Math.PI) / 180);
   return { lat: [lat - latHalf, lat + latHalf], lon: [lon - lonHalf, lon + lonHalf] };
@@ -105,30 +105,52 @@ const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;
 const isoDay = (date) => date.toISOString().slice(0, 10);
 const addDays = (day, days) => isoDay(new Date(Date.parse(`${day}T00:00:00Z`) + days * 86400000));
 
-// Cities publish late (NYC about 5 weeks) and keep a few stray late or typo rows,
-// so a period ends on the newest day that holds a full day's tickets among the newest rows.
-// A small city (Everett writes about 30 a day) sets its own full_day_tickets.
-// Reading the newest rows uses the portal's date index; a per-day GROUP BY took 59 s cold on SF.
-const FULL_DAY_TICKETS = 500;
+// Cities publish late (NYC about 5 weeks) and upload a day in parts (SF had 549 of about 4,100).
+// The newest rows (date index; a 120-day GROUP BY took 59 s cold on SF) find a recent day,
+// then a per-day count over the 4 weeks before it picks the newest complete day.
+const FULL_DAY_TICKETS = 500; // Everett, about 30 a day, sets its own full_day_tickets
 const NEWEST_ROWS = 2000;
 const LOOKBACK_DAYS = 120;
+const COMPARED_DAYS = 27;
+const COMPLETE_SHARE = 0.8;
+
+// Newest day over the floor and at 4/5 of its weekday's median 1 to 3 weeks before.
+export function completeDay(city, counts) {
+  const floor = city.full_day_tickets ?? FULL_DAY_TICKETS;
+  for (const day of Object.keys(counts).sort().reverse()) {
+    const earlier = [];
+    for (const back of [7, 14, 21]) if (counts[addDays(day, -back)]) earlier.push(counts[addDays(day, -back)]);
+    earlier.sort((a, b) => a - b);
+    const usual = earlier[Math.floor(earlier.length / 2)] ?? 0; // of two weeks the higher, a holiday is low
+    if (counts[day] >= floor && counts[day] >= COMPLETE_SHARE * usual) return day;
+  }
+  return null;
+}
+
+// Tickets per day; a NYC day can come back from two datasets.
+async function dayCounts(city, span, q) {
+  const counts = {};
+  for (const row of await query(city, datasetsFor(city, span.since, span.until), { ...q, where: dayFilter(city, span) })) {
+    const day = String(row.day_value).slice(0, 10);
+    counts[day] = (counts[day] ?? 0) + Number(row.n ?? 1);
+  }
+  return counts;
+}
 
 async function newestDay(city) {
   if (city.last_day) return city.last_day;
   const until = addDays(isoDay(new Date()), -1);
   const since = addDays(until, -LOOKBACK_DAYS);
-  const rows = await query(city, datasetsFor(city, since, until), {
-    select: `${city.date_field} AS day_value`, where: dayFilter(city, { since, until }),
-    order: `${city.date_field} DESC`, limit: NEWEST_ROWS,
+  const newestRows = await dayCounts(city, { since, until }, {
+    select: `${city.date_field} AS day_value`, order: `${city.date_field} DESC`, limit: NEWEST_ROWS,
   });
-  const perDay = new Map(); // a NYC day can come back from two datasets
-  for (const row of rows) {
-    const day = String(row.day_value).slice(0, 10);
-    perDay.set(day, (perDay.get(day) ?? 0) + 1);
-  }
-  let newest = null;
-  for (const [day, n] of perDay) if (n >= (city.full_day_tickets ?? FULL_DAY_TICKETS) && (newest == null || day > newest)) newest = day;
-  return newest ?? until;
+  const floorDay = completeDay(city, newestRows);
+  if (!floorDay) return until;
+  const day = dayOf(city, city.date_field);
+  const weeks = await dayCounts(city, { since: addDays(floorDay, -COMPARED_DAYS), until: floorDay }, {
+    select: `${day} AS day_value, count(*) AS n`, group: day,
+  });
+  return completeDay(city, weeks) ?? floorDay;
 }
 
 // Days the reader picked, clamped to the city's first and newest day.
@@ -149,6 +171,7 @@ function period(city, value) {
 
 const hourOf = (city, field) => (city.portal === "carto" ? `extract(hour from ${field})` : `date_extract_hh(${field})`);
 const dowOf = (city, field) => (city.portal === "carto" ? `extract(dow from ${field})` : `date_extract_dow(${field})`);
+const dayOf = (city, field) => (city.portal === "carto" ? `date_trunc('day', ${field})` : `date_trunc_ymd(${field})`);
 
 function portalUrl(city, dataset, q) {
   if (city.portal === "carto") {
@@ -180,6 +203,7 @@ async function query(city, datasets, q) {
 }
 
 function spotFilter(city, spot) {
+  if (spot.wholeCity) return null;
   if (spot.street) {
     const [house, street] = city.columns.location;
     const where = [`upper(${street}) = ${quote(spot.street.toUpperCase())}`];
@@ -197,15 +221,16 @@ function dayFilter(city, { since, until }) {
   return `${field} >= '${since}T00:00:00' AND ${field} < '${addDays(until, 1)}T00:00:00'`;
 }
 
-let codeTable = null;
+const codeTables = new Map(); // fine table dataset -> code -> row
 async function fineTable(city) {
   const lookup = city.fine_lookup;
-  if (!codeTable) {
+  if (!codeTables.has(lookup.dataset)) {
     const rows = await query({ ...city, portal: "socrata", host: lookup.host }, [lookup.dataset], { select: "*" });
-    codeTable = {};
-    for (const row of rows) codeTable[row[lookup.code_field]] = row;
+    const table = {};
+    for (const row of rows) table[row[lookup.code_field]] = row;
+    codeTables.set(lookup.dataset, table);
   }
-  return codeTable;
+  return codeTables.get(lookup.dataset);
 }
 
 // Ticket count, fines and groups from a server-side GROUP BY; no rows are downloaded.
@@ -270,7 +295,8 @@ async function newestTickets(city, datasets, where) {
   const col = city.columns;
   const wanted = [col.source_id, city.date_field, city.time_field, col.violation_text, col.fine_usd, col.lat, col.lon, col.point, col.location];
   const rows = await query(city, datasets, {
-    select: [...new Set(wanted.filter(Boolean))].join(", "), where, // Winnipeg's code and text share a column order: `${city.date_field} DESC`, limit: DOTS_SHOWN,
+    // Winnipeg's code and text share a column; ask for each column once.
+    select: [...new Set(wanted.filter(Boolean))].join(", "), where, order: `${city.date_field} DESC`, limit: DOTS_SHOWN,
   });
   return rows.map((row) => {
     const [lat, lon] = place(city, ...coords(city, row));
@@ -393,28 +419,38 @@ function render(city, spotLabel, span, result) {
 async function countSpot(spot, spotLabel) {
   if (page.running) return;
   const city = page.cities[page.form.city.value];
-  if (!city.newest) return; // pickCity is still finding the newest day
-  const span = period(city, page.form.period.value);
-  const datasets = datasetsFor(city, span.since, span.until);
-  const where = `${dayFilter(city, span)} AND ${spotFilter(city, spot)}`;
+  const switched = () => page.form.city.value !== city.slug; // the reader picked another city mid-count
   setBusy(true);
   page.dots.clearLayers();
   const started = performance.now();
   const steps = spot.street ? 3 : 4;
   try {
+    if (!city.newest) { // pickCity's lookup failed or is still running
+      page.status.textContent = `Finding the newest day ${city.name} has published...`;
+      city.newest = await newestDay(city);
+      if (switched()) return;
+    }
+    const span = period(city, page.form.period.value);
+    const datasets = datasetsFor(city, span.since, span.until);
+    const where = [dayFilter(city, span), spotFilter(city, spot)].filter(Boolean).join(" AND ");
     page.status.textContent = `Step 1 of ${steps}: counting tickets and fines, ${span.since} to ${span.until}...`;
     const groups = await byGroup(city, datasets, where);
+    if (switched()) return;
     render(city, spotLabel, span, { groups });
     page.answer.classList.remove("loading");
     page.status.textContent = `Step 2 of ${steps}: reading hours of day...`;
     const hours = await byHour(city, datasets, where);
+    if (switched()) return;
     page.status.textContent = `Step 3 of ${steps}: reading weekdays...`;
     const days = await byWeekday(city, datasets, where);
+    if (switched()) return;
     render(city, spotLabel, span, { groups, hours, days });
     if (groups.tickets) page.answer.querySelector(".body").append(csvButton(city, { span, datasets, where, tickets: groups.tickets }));
     if (!spot.street) {
       page.status.textContent = `Step 4 of ${steps}: placing the newest tickets on the map...`;
-      for (const dot of await newestTickets(city, [datasets.at(-1)], where)) {
+      const dots = await newestTickets(city, [datasets.at(-1)], where);
+      if (switched()) return;
+      for (const dot of dots) {
         L.circleMarker([dot.lat, dot.lon], { radius: 5, color: "#fff", weight: 1.5, fillColor: "#ff3b45", fillOpacity: 1 })
           .bindPopup(() => dotPopup(city, datasets.at(-1), dot)).addTo(page.dots);
       }
@@ -425,7 +461,7 @@ async function countSpot(spot, spotLabel) {
       : "";
     page.status.textContent = `${count.format(groups.tickets)} tickets, read in ${seconds} s.${exactMiss}`;
   } catch (error) {
-    page.status.textContent = `The city portal did not answer: ${error.message}`;
+    if (!switched()) page.status.textContent = `The city portal did not answer: ${error.message}`;
   } finally {
     setBusy(false);
   }
@@ -494,8 +530,20 @@ function suggestHouses() {
     .catch((error) => console.warn("house suggestions failed:", error.message));
 }
 
+// Every ticket of the period, also those without a map spot; the map shows the whole city.
+function countWholeCity(city) {
+  page.box.remove();
+  const { lat, lon } = city.bounds;
+  page.map.fitBounds([[lat[0], lon[0]], [lat[1], lon[1]]]);
+  countSpot({ wholeCity: true }, `All of ${city.name}`);
+}
+
 // Draws the square the reader asked for, fits the map to it and counts inside it.
 function countSquare(city, lat, lon, label) {
+  if (page.form.size.value === "city") {
+    countWholeCity(city);
+    return;
+  }
   if (place(city, lat, lon)[0] == null) {
     page.status.textContent = `That spot is outside ${city.name}.`;
     return;
@@ -555,7 +603,10 @@ function suggestAddresses() {
       if (turn !== addressTurn) return;
       const options = [];
       for (const { properties: found, geometry } of features) {
-        if (found.city !== city.name) continue; // the bounds also cover towns next door
+        // The bounds also cover towns next door, which Photon files with no district.
+        // An LA neighbourhood can come back as its own city, e.g. Sherman Oaks, with the same district.
+        const isNeighbourhood = found.district != null && found.district === found.city;
+        if (found.city !== city.name && !isNeighbourhood) continue;
         const street = [found.housenumber, found.street].filter(Boolean).join(" ");
         const label = [found.name, street, found.district ?? found.postcode].filter(Boolean).join(", ");
         if (page.places.has(label)) continue;
@@ -609,6 +660,7 @@ function search(event) {
   if (page.running) return;
   const city = page.cities[page.form.city.value];
   if (searchesByStreet(city)) countStreet();
+  else if (page.form.size.value === "city") countWholeCity(city);
   else countAddress(city);
 }
 
@@ -643,8 +695,10 @@ async function pickCity() {
   page.form.house.value = "";
   page.streetList.replaceChildren();
   page.houseList.replaceChildren();
+  const [firstYear, lastYear] = [Number(city.first_day.slice(0, 4)), Number(city.last_day?.slice(0, 4))];
+  const years = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => String(lastYear - index));
   const options = city.last_day
-    ? [2017, 2016, 2015, 2014, 2013, 2012].map((year) => [`year:${year}`, String(year)])
+    ? years.map((year) => [`year:${year}`, year])
     : [["30", "Last 30 days"], ["90", "Last 90 days"], ["365", "Last 365 days"]];
   page.form.period.replaceChildren(...options.map(([value, text]) => el("option", { value, textContent: text })));
   page.map.getContainer().hidden = isStreet;
@@ -674,12 +728,12 @@ async function pickCity() {
   const action = isStreet
     ? `${city.name} tickets carry no coordinates, so no square can hold them; type a street.`
     : "Type an address and pick a square size to count the tickets inside it.";
-  const covers = city.last_day ? `${city.name} data covers 2012 to 2017 only.` : `Newest ${city.name} data: ${city.newest}.`;
+  const covers = city.last_day ? `${city.name} data covers ${firstYear} to ${lastYear} only.` : `Newest ${city.name} data: ${city.newest}.`;
   page.status.textContent = `${action} ${covers}`;
 }
 
 // "Type an address in Everett, Los Angeles, or Oakland, or a street in New York City, ..." from cities.json.
-export function leadLine(cities) {
+function leadLine(cities) {
   const names = (street) => new Intl.ListFormat("en", { type: "disjunction" })
     .format(cities.filter((city) => searchesByStreet(city) === street).map((city) => city.name));
   const streets = cities.some(searchesByStreet) ? `, or a street in ${names(true)}` : "";

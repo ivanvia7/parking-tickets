@@ -77,9 +77,9 @@ def build(slug: str, since: str, until: str, out: Path) -> None:
 
 def count_rows(path: Path) -> int:
     reader = "read_parquet" if path.suffix == ".parquet" else "read_csv"
-    return duckdb.sql(f"SELECT count(*) FROM {reader}({sql_text(path)})").fetchall()[0][
-        0
-    ]
+    return duckdb.execute(
+        f"SELECT count(*) FROM {reader}({sql_text(path)})"
+    ).fetchall()[0][0]
 
 
 def file_entry(path: Path) -> dict:
