@@ -251,6 +251,51 @@ async function newestTickets(city, datasets, where) {
   }).filter((dot) => dot.lat != null);
 }
 
+// The portal's own CSV of every ticket counted; one file per dataset (NYC can touch two).
+function csvUrl(city, dataset, where) {
+  const url = portalUrl(city, dataset, { select: "*", where, order: `${city.date_field} DESC` });
+  if (city.portal === "carto") {
+    url.searchParams.set("format", "csv");
+    url.searchParams.set("filename", `parking-tickets-${city.slug}`);
+  } else {
+    url.pathname = url.pathname.replace(/\.json$/, ".csv"); // same query, CSV body
+  }
+  return url;
+}
+
+// Fetch and save one CSV; a NYC period can need two datasets, joined under one header.
+async function saveCsv(city, datasets, where, name) {
+  const parts = [];
+  for (const dataset of datasets) {
+    const response = await fetch(csvUrl(city, dataset, where));
+    if (!response.ok) throw new Error(`${response.status} from ${city.host}`);
+    const text = await response.text();
+    parts.push(parts.length ? text.slice(text.indexOf("\n") + 1) : text);
+  }
+  const link = el("a", { href: URL.createObjectURL(new Blob(parts, { type: "text/csv" })), download: name });
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function csvButton(city, { span, datasets, where, tickets }) {
+  const name = `parking-tickets-${city.slug}-${span.since}-to-${span.until}.csv`;
+  const button = el("button", { type: "button", className: "ghost", textContent: "Download CSV" });
+  button.onclick = async () => {
+    button.disabled = true;
+    button.textContent = "Downloading...";
+    try {
+      await saveCsv(city, datasets, where, name);
+      button.textContent = "Download CSV";
+    } catch (error) {
+      button.textContent = `Download failed: ${error.message}`;
+    } finally {
+      button.disabled = false;
+    }
+  };
+  const capped = tickets > ROW_LIMIT ? ` Only the newest ${count.format(ROW_LIMIT)} per file.` : "";
+  return el("p", {}, button, ` The city's own rows for these ${count.format(tickets)} tickets.${capped}`);
+}
+
 // The portal's own row, so a reader can check the source.
 function rowUrl(city, dataset, id) {
   return portalUrl(city, dataset, { select: "*", where: `${city.columns.source_id} = ${quote(id)}`, limit: 1 });
@@ -332,6 +377,7 @@ async function countSpot(spot, spotLabel) {
     page.status.textContent = `Step 3 of ${steps}: reading weekdays...`;
     const days = await byWeekday(city, datasets, where);
     render(city, spotLabel, span, { groups, hours, days });
+    if (groups.tickets) page.answer.querySelector(".body").append(csvButton(city, { span, datasets, where, tickets: groups.tickets }));
     if (!spot.street) {
       page.status.textContent = `Step 4 of ${steps}: placing the newest tickets on the map...`;
       for (const dot of await newestTickets(city, [datasets.at(-1)], where)) {
