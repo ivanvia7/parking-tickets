@@ -1,0 +1,32 @@
+name = "Winnipeg"
+slug = "winnipeg"
+portal = "socrata"
+host = "data.winnipeg.ca"
+dataset = "bhrt-29rb"
+date_field = "issue_date"
+# Since mid-2020 the portal writes the day only, as midnight.
+midnight_is_day_only = true
+# Fines are Canadian dollars, kept in fine_usd so the output columns stay the same.
+currency = "CAD"
+# About 450 tickets on a weekday.
+full_day_tickets = 200
+source_url = "https://data.winnipeg.ca/d/bhrt-29rb"
+license = "check on portal page"
+# Published files start here; earlier dates are a few typo tickets.
+first_day = "2012-01-01"
+
+[columns]  # our column = city column
+# No ticket number column; the portal's own row id stands in.
+source_id = ":id"
+# Code and text in one value, e.g. "P06-No Stopping".
+violation_code = "violation"
+violation_text = "violation"
+# full_fine, not the early-payment discounted_fine.
+fine_usd = "full_fine"
+location = "street"
+point = "point"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [49.71, 50.00]
+lon = [-97.35, -96.95]

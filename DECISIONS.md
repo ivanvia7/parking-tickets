@@ -19,3 +19,8 @@
 **Decided:** a city file may name one GeoJSON `point` column instead of `lat` and `lon`; the package splits it and the page counts with `within_box`.
 **Why:** Oakland, Winnipeg and Everett publish only a point column.
 **Rules out:** new output columns for points.
+
+## 2026-11-02 — Winnipeg fines stay in fine_usd as Canadian dollars
+**Decided:** Winnipeg's `full_fine` goes into `fine_usd` unconverted; its city file says `currency = "CAD"` and the page prints CA$.
+**Why:** the output columns must not change, and a converted amount is not what the city charges.
+**Rules out:** renaming `fine_usd`, currency conversion, the discounted fine.
