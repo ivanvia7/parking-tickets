@@ -1,3 +1,4 @@
+import functools
 import os
 import sqlite3
 import warnings
@@ -7,7 +8,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from parking_tickets import cache, cities, export, fines
+from parking_tickets import cache, cities, export
 from parking_tickets.portals import carto, socrata
 from parking_tickets.schema import COLUMNS, Ticket, to_ticket
 
@@ -35,6 +36,19 @@ def is_settled(day: str) -> bool:
     return date.fromisoformat(day) <= date.today() - timedelta(days=SETTLE_DAYS)
 
 
+@functools.cache
+def fetch_table(host: str, dataset: str, code_field: str) -> dict[str, dict]:
+    return {row[code_field]: row for row in socrata.read(host, dataset, "1=1")}
+
+
+def load_table(city: dict) -> dict[str, dict] | None:
+    """Fine per violation code, for cities that publish fines in a separate table."""
+    lookup = city.get("fine_lookup")
+    if lookup is None:
+        return None
+    return fetch_table(lookup["host"], lookup["dataset"], lookup["code_field"])
+
+
 def parse_rows(
     city: dict, rows: Iterator[dict], table: dict | None, skipped: list[str]
 ) -> Iterator[Ticket]:
@@ -51,7 +65,7 @@ def fetch_day(
 ) -> int:
     rows = PORTALS[city["portal"]](city, day)
     before = len(skipped)
-    tickets = list(parse_rows(city, rows, fines.load_table(city), skipped))
+    tickets = list(parse_rows(city, rows, load_table(city), skipped))
     # A day with skipped rows stays open, so a fixed city file can read it again.
     settled = is_settled(day) and len(skipped) == before
     return cache.save_day(conn, city["slug"], day, tickets, settled)
