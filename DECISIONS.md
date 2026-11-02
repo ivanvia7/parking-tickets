@@ -9,3 +9,8 @@
 **Decided:** LA, SF and Philadelphia count inside a square around a typed address; reverses the map-click entry.
 **Why:** a typed address finds a place faster than panning.
 **Rules out:** map-click counting, address type-ahead.
+
+## 2026-11-02 — Address suggestions from Photon
+**Decided:** the address box suggests places while typing through Photon; Nominatim still geocodes typed text on submit. Reverses "address type-ahead" in the entry above.
+**Why:** readers expect suggestions; Photon is built for type-ahead, Nominatim forbids it.
+**Rules out:** suggestions from ticket addresses, whose spellings do not geocode.

@@ -84,20 +84,26 @@ pre { margin: 8px 0 0; padding: 12px 16px; background: var(--layer2); overflow-x
       <label>Period <select name="period"></select></label>
     </div>
     <div class="grid" id="addressBox">
-      <label>Address <input name="address" placeholder="e.g. 200 N Spring St" autocomplete="street-address"></label>
+      <label>Address <input name="address" list="addressList" placeholder="e.g. 200 N Spring St" autocomplete="off"></label>
       <label>Square size, side to side <select name="size">
+        <option value="50">50 m</option>
         <option value="100">100 m</option>
+        <option value="150">150 m</option>
         <option value="250" selected>250 m</option>
         <option value="500">500 m</option>
+        <option value="750">750 m</option>
         <option value="1000">1 km</option>
+        <option value="1500">1.5 km</option>
         <option value="2000">2 km</option>
+        <option value="3000">3 km</option>
+        <option value="5000">5 km</option>
       </select></label>
     </div>
     <div class="grid" id="streetBox" hidden>
       <label>Street <input name="street" list="streetList" placeholder="e.g. Broadway" autocomplete="off"></label>
       <label>House number (optional) <input name="house" list="houseList" placeholder="e.g. 1501" autocomplete="off"></label>
     </div>
-    <datalist id="streetList"></datalist><datalist id="houseList"></datalist>
+    <datalist id="addressList"></datalist><datalist id="streetList"></datalist><datalist id="houseList"></datalist>
     <button type="submit" id="searchButton">Count tickets</button>
     <button type="button" id="nearButton" class="ghost">Use my location</button>
   </form>

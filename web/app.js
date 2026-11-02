@@ -503,10 +503,52 @@ async function geocode(city, address) {
   return { lat: Number(found.lat), lon: Number(found.lon), name: found.display_name, inCity };
 }
 
+// Address suggestions while typing come from Photon, an OpenStreetMap search built for type-ahead;
+// Nominatim forbids that. A picked suggestion keeps its coordinates, so submit skips Nominatim.
+const SUGGESTER = "https://photon.komoot.io/api/";
+const ADDRESS_MIN_CHARS = 3;
+let addressTurn = 0;
+
+function suggestAddresses() {
+  clearTimeout(page.addressTyping);
+  const city = page.cities[page.form.city.value];
+  const typed = page.form.address.value.trim();
+  if (typed.length < ADDRESS_MIN_CHARS || searchesByStreet(city) || page.places.has(typed)) return;
+  page.addressTyping = setTimeout(async () => {
+    const turn = ++addressTurn; // a slower, older answer must not overwrite a newer one
+    const { lat, lon } = city.bounds;
+    const url = new URL(SUGGESTER);
+    url.search = new URLSearchParams({ q: typed, limit: String(SUGGESTIONS), bbox: `${lon[0]},${lat[0]},${lon[1]},${lat[1]}` });
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`${response.status} from ${url.host}`);
+      const { features } = await response.json();
+      if (turn !== addressTurn) return;
+      const options = [];
+      for (const { properties: found, geometry } of features) {
+        if (found.city !== city.name) continue; // the bounds also cover towns next door
+        const street = [found.housenumber, found.street].filter(Boolean).join(" ");
+        const label = [found.name, street, found.district ?? found.postcode].filter(Boolean).join(", ");
+        if (page.places.has(label)) continue;
+        page.places.set(label, { lon: geometry.coordinates[0], lat: geometry.coordinates[1] });
+        options.push(el("option", { value: label }));
+      }
+      page.addressList.replaceChildren(...options);
+    } catch (error) {
+      console.warn("address suggestions failed:", error.message); // submit still geocodes
+    }
+  }, TYPE_PAUSE_MS);
+}
+
 async function countAddress(city) {
   const address = page.form.address.value.trim();
   if (!address) {
     page.status.textContent = "Type an address.";
+    return;
+  }
+  const picked = page.places.get(address);
+  if (picked) {
+    countSquare(city, picked.lat, picked.lon, address);
     return;
   }
   setBusy(true);
@@ -566,6 +608,8 @@ async function pickCity() {
   const city = page.cities[slug];
   const isStreet = searchesByStreet(city);
   page.form.address.value = "";
+  page.addressList.replaceChildren();
+  page.places.clear();
   page.form.street.value = "";
   page.form.house.value = "";
   page.streetList.replaceChildren();
@@ -608,7 +652,7 @@ async function pickCity() {
 async function start() {
   const response = await fetch("cities.json");
   page.cities = await response.json();
-  for (const id of ["form", "status", "answer", "nearButton", "addressBox", "streetBox", "searchButton", "progress", "streetList", "houseList"]) {
+  for (const id of ["form", "status", "answer", "nearButton", "addressBox", "streetBox", "searchButton", "progress", "addressList", "streetList", "houseList"]) {
     page[id] = document.getElementById(id);
   }
   page.map = L.map("map");
@@ -618,6 +662,7 @@ async function start() {
     maxZoom: 19,
   }).addTo(page.map);
   page.dots = L.layerGroup().addTo(page.map);
+  page.places = new Map(); // suggested address label -> its coordinates
   page.box = L.rectangle([[0, 0], [0, 0]], { color: "#78a9ff", weight: 1, fillOpacity: 0.1 });
   for (const [slug, city] of Object.entries(page.cities)) {
     page.form.city.append(el("option", { value: slug, textContent: city.name }));
@@ -625,6 +670,7 @@ async function start() {
   page.form.city.value = "la";
   page.form.city.addEventListener("change", pickCity);
   page.form.addEventListener("submit", search);
+  page.form.address.addEventListener("input", suggestAddresses);
   page.form.street.addEventListener("input", suggestStreets);
   page.form.street.addEventListener("change", suggestHouses);
   page.nearButton.addEventListener("click", useLocation);
