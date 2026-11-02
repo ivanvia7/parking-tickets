@@ -418,28 +418,38 @@ function render(city, spotLabel, span, result) {
 async function countSpot(spot, spotLabel) {
   if (page.running) return;
   const city = page.cities[page.form.city.value];
-  if (!city.newest) return; // pickCity is still finding the newest day
-  const span = period(city, page.form.period.value);
-  const datasets = datasetsFor(city, span.since, span.until);
-  const where = [dayFilter(city, span), spotFilter(city, spot)].filter(Boolean).join(" AND ");
+  const switched = () => page.form.city.value !== city.slug; // the reader picked another city mid-count
   setBusy(true);
   page.dots.clearLayers();
   const started = performance.now();
   const steps = spot.street ? 3 : 4;
   try {
+    if (!city.newest) { // pickCity's lookup failed or is still running
+      page.status.textContent = `Finding the newest day ${city.name} has published...`;
+      city.newest = await newestDay(city);
+      if (switched()) return;
+    }
+    const span = period(city, page.form.period.value);
+    const datasets = datasetsFor(city, span.since, span.until);
+    const where = [dayFilter(city, span), spotFilter(city, spot)].filter(Boolean).join(" AND ");
     page.status.textContent = `Step 1 of ${steps}: counting tickets and fines, ${span.since} to ${span.until}...`;
     const groups = await byGroup(city, datasets, where);
+    if (switched()) return;
     render(city, spotLabel, span, { groups });
     page.answer.classList.remove("loading");
     page.status.textContent = `Step 2 of ${steps}: reading hours of day...`;
     const hours = await byHour(city, datasets, where);
+    if (switched()) return;
     page.status.textContent = `Step 3 of ${steps}: reading weekdays...`;
     const days = await byWeekday(city, datasets, where);
+    if (switched()) return;
     render(city, spotLabel, span, { groups, hours, days });
     if (groups.tickets) page.answer.querySelector(".body").append(csvButton(city, { span, datasets, where, tickets: groups.tickets }));
     if (!spot.street) {
       page.status.textContent = `Step 4 of ${steps}: placing the newest tickets on the map...`;
-      for (const dot of await newestTickets(city, [datasets.at(-1)], where)) {
+      const dots = await newestTickets(city, [datasets.at(-1)], where);
+      if (switched()) return;
+      for (const dot of dots) {
         L.circleMarker([dot.lat, dot.lon], { radius: 5, color: "#fff", weight: 1.5, fillColor: "#ff3b45", fillOpacity: 1 })
           .bindPopup(() => dotPopup(city, datasets.at(-1), dot)).addTo(page.dots);
       }
@@ -450,7 +460,7 @@ async function countSpot(spot, spotLabel) {
       : "";
     page.status.textContent = `${count.format(groups.tickets)} tickets, read in ${seconds} s.${exactMiss}`;
   } catch (error) {
-    page.status.textContent = `The city portal did not answer: ${error.message}`;
+    if (!switched()) page.status.textContent = `The city portal did not answer: ${error.message}`;
   } finally {
     setBusy(false);
   }
