@@ -105,30 +105,52 @@ const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;
 const isoDay = (date) => date.toISOString().slice(0, 10);
 const addDays = (day, days) => isoDay(new Date(Date.parse(`${day}T00:00:00Z`) + days * 86400000));
 
-// Cities publish late (NYC about 5 weeks) and keep a few stray late or typo rows,
-// so a period ends on the newest day that holds a full day's tickets among the newest rows.
-// A small city (Everett writes about 30 a day) sets its own full_day_tickets.
-// Reading the newest rows uses the portal's date index; a per-day GROUP BY took 59 s cold on SF.
-const FULL_DAY_TICKETS = 500;
+// Cities publish late (NYC about 5 weeks) and upload a day in parts (SF had 549 of about 4,100).
+// The newest rows (date index; a 120-day GROUP BY took 59 s cold on SF) find a recent day,
+// then a per-day count over the 4 weeks before it picks the newest complete day.
+const FULL_DAY_TICKETS = 500; // Everett, about 30 a day, sets its own full_day_tickets
 const NEWEST_ROWS = 2000;
 const LOOKBACK_DAYS = 120;
+const COMPARED_DAYS = 27;
+const COMPLETE_SHARE = 0.8;
+
+// Newest day over the floor and at 4/5 of its weekday's median 1 to 3 weeks before.
+export function completeDay(city, counts) {
+  const floor = city.full_day_tickets ?? FULL_DAY_TICKETS;
+  for (const day of Object.keys(counts).sort().reverse()) {
+    const earlier = [];
+    for (const back of [7, 14, 21]) if (counts[addDays(day, -back)]) earlier.push(counts[addDays(day, -back)]);
+    earlier.sort((a, b) => a - b);
+    const usual = earlier[Math.floor(earlier.length / 2)] ?? 0; // of two weeks the higher, a holiday is low
+    if (counts[day] >= floor && counts[day] >= COMPLETE_SHARE * usual) return day;
+  }
+  return null;
+}
+
+// Tickets per day; a NYC day can come back from two datasets.
+async function dayCounts(city, span, q) {
+  const counts = {};
+  for (const row of await query(city, datasetsFor(city, span.since, span.until), { ...q, where: dayFilter(city, span) })) {
+    const day = String(row.day_value).slice(0, 10);
+    counts[day] = (counts[day] ?? 0) + Number(row.n ?? 1);
+  }
+  return counts;
+}
 
 async function newestDay(city) {
   if (city.last_day) return city.last_day;
   const until = addDays(isoDay(new Date()), -1);
   const since = addDays(until, -LOOKBACK_DAYS);
-  const rows = await query(city, datasetsFor(city, since, until), {
-    select: `${city.date_field} AS day_value`, where: dayFilter(city, { since, until }),
-    order: `${city.date_field} DESC`, limit: NEWEST_ROWS,
+  const newestRows = await dayCounts(city, { since, until }, {
+    select: `${city.date_field} AS day_value`, order: `${city.date_field} DESC`, limit: NEWEST_ROWS,
   });
-  const perDay = new Map(); // a NYC day can come back from two datasets
-  for (const row of rows) {
-    const day = String(row.day_value).slice(0, 10);
-    perDay.set(day, (perDay.get(day) ?? 0) + 1);
-  }
-  let newest = null;
-  for (const [day, n] of perDay) if (n >= (city.full_day_tickets ?? FULL_DAY_TICKETS) && (newest == null || day > newest)) newest = day;
-  return newest ?? until;
+  const floorDay = completeDay(city, newestRows);
+  if (!floorDay) return until;
+  const day = dayOf(city, city.date_field);
+  const weeks = await dayCounts(city, { since: addDays(floorDay, -COMPARED_DAYS), until: floorDay }, {
+    select: `${day} AS day_value, count(*) AS n`, group: day,
+  });
+  return completeDay(city, weeks) ?? floorDay;
 }
 
 // Days the reader picked, clamped to the city's first and newest day.
@@ -149,6 +171,7 @@ function period(city, value) {
 
 const hourOf = (city, field) => (city.portal === "carto" ? `extract(hour from ${field})` : `date_extract_hh(${field})`);
 const dowOf = (city, field) => (city.portal === "carto" ? `extract(dow from ${field})` : `date_extract_dow(${field})`);
+const dayOf = (city, field) => (city.portal === "carto" ? `date_trunc('day', ${field})` : `date_trunc_ymd(${field})`);
 
 function portalUrl(city, dataset, q) {
   if (city.portal === "carto") {
