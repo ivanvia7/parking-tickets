@@ -326,7 +326,7 @@ async function countSpot(spot, spotLabel) {
     if (!spot.street) {
       page.status.textContent = "Placing the newest tickets on the map...";
       for (const dot of await newestTickets(city, [datasets.at(-1)], where)) {
-        L.circleMarker([dot.lat, dot.lon], { radius: 4, color: "#fa4d56", weight: 1, fillOpacity: 0.7 })
+        L.circleMarker([dot.lat, dot.lon], { radius: 5, color: "#fff", weight: 1.5, fillColor: "#ff3b45", fillOpacity: 1 })
           .bindPopup(() => dotPopup(city, datasets.at(-1), dot)).addTo(page.dots);
       }
     }
