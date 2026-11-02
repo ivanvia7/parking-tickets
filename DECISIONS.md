@@ -24,3 +24,8 @@
 **Decided:** Winnipeg's `full_fine` goes into `fine_usd` unconverted; its city file says `currency = "CAD"` and the page prints CA$.
 **Why:** the output columns must not change, and a converted amount is not what the city charges.
 **Rules out:** renaming `fine_usd`, currency conversion, the discounted fine.
+
+## 2026-11-02 — Cities skipped in the November search
+**Decided:** Cambridge MA, Edmonton, Norfolk, Montgomery County MD and Chicago are not added.
+**Why:** no coordinates, no fines, data older than a year, or FOIA only.
+**Rules out:** street-only cities beyond NYC for now.
