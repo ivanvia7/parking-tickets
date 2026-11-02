@@ -180,6 +180,7 @@ async function query(city, datasets, q) {
 }
 
 function spotFilter(city, spot) {
+  if (spot.wholeCity) return null;
   if (spot.street) {
     const [house, street] = city.columns.location;
     const where = [`upper(${street}) = ${quote(spot.street.toUpperCase())}`];
@@ -270,7 +271,8 @@ async function newestTickets(city, datasets, where) {
   const col = city.columns;
   const wanted = [col.source_id, city.date_field, city.time_field, col.violation_text, col.fine_usd, col.lat, col.lon, col.point, col.location];
   const rows = await query(city, datasets, {
-    select: [...new Set(wanted.filter(Boolean))].join(", "), where, // Winnipeg's code and text share a column order: `${city.date_field} DESC`, limit: DOTS_SHOWN,
+    // Winnipeg's code and text share a column; ask for each column once.
+    select: [...new Set(wanted.filter(Boolean))].join(", "), where, order: `${city.date_field} DESC`, limit: DOTS_SHOWN,
   });
   return rows.map((row) => {
     const [lat, lon] = place(city, ...coords(city, row));
@@ -396,7 +398,7 @@ async function countSpot(spot, spotLabel) {
   if (!city.newest) return; // pickCity is still finding the newest day
   const span = period(city, page.form.period.value);
   const datasets = datasetsFor(city, span.since, span.until);
-  const where = `${dayFilter(city, span)} AND ${spotFilter(city, spot)}`;
+  const where = [dayFilter(city, span), spotFilter(city, spot)].filter(Boolean).join(" AND ");
   setBusy(true);
   page.dots.clearLayers();
   const started = performance.now();
@@ -494,8 +496,20 @@ function suggestHouses() {
     .catch((error) => console.warn("house suggestions failed:", error.message));
 }
 
+// Every ticket of the period, also those without a map spot; the map shows the whole city.
+function countWholeCity(city) {
+  page.box.remove();
+  const { lat, lon } = city.bounds;
+  page.map.fitBounds([[lat[0], lon[0]], [lat[1], lon[1]]]);
+  countSpot({ wholeCity: true }, `All of ${city.name}`);
+}
+
 // Draws the square the reader asked for, fits the map to it and counts inside it.
 function countSquare(city, lat, lon, label) {
+  if (page.form.size.value === "city") {
+    countWholeCity(city);
+    return;
+  }
   if (place(city, lat, lon)[0] == null) {
     page.status.textContent = `That spot is outside ${city.name}.`;
     return;
@@ -609,6 +623,7 @@ function search(event) {
   if (page.running) return;
   const city = page.cities[page.form.city.value];
   if (searchesByStreet(city)) countStreet();
+  else if (page.form.size.value === "city") countWholeCity(city);
   else countAddress(city);
 }
 
