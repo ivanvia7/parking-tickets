@@ -171,3 +171,15 @@ def test_nyc_fines_and_datasets_match() -> None:
     expected_sets = [socrata.dataset_ids(city, *span) for span in spans]
     got = run_page(city, fines + [["datasetsFor", *span] for span in spans])
     assert got == expected_fines + expected_sets
+
+
+# Full plate numbers some portals publish; the page must never ask for them.
+PLATE_COLUMNS = {"nyc": "plate_id", "sf": "vehicle_plate"}
+
+
+def test_csv_leaves_plate_numbers_out() -> None:
+    for slug, plate in PLATE_COLUMNS.items():
+        city = web_city(slug)
+        (columns,) = run_page(city, [["csvColumns"]])
+        assert plate not in columns.split(", ")
+        assert city["columns"]["plate_state"] in columns.split(", ")

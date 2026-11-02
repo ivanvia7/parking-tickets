@@ -305,8 +305,14 @@ async function newestTickets(city, datasets, where) {
 }
 
 // The portal's own CSV of every ticket counted; one file per dataset (NYC can touch two).
+// Only the columns the city file names, as the CLI keeps; NYC and SF also publish full plate numbers.
+export function csvColumns(city) {
+  const named = [city.date_field, city.time_field, city.fine_lookup?.zone_field, ...Object.values(city.columns).flat()];
+  return [...new Set(named.filter(Boolean))].join(", ");
+}
+
 function csvUrl(city, dataset, where) {
-  const url = portalUrl(city, dataset, { select: "*", where, order: `${city.date_field} DESC` });
+  const url = portalUrl(city, dataset, { select: csvColumns(city), where, order: `${city.date_field} DESC` });
   if (city.portal === "carto") {
     url.searchParams.set("format", "csv");
     url.searchParams.set("filename", `parking-tickets-${city.slug}`);
@@ -346,12 +352,12 @@ function csvButton(city, { span, datasets, where, tickets }) {
     }
   };
   const capped = tickets > ROW_LIMIT ? ` Only the newest ${count.format(ROW_LIMIT)} per file.` : "";
-  return el("p", {}, button, ` The city's own rows for these ${count.format(tickets)} tickets.${capped}`);
+  return el("p", {}, button, ` The city's rows for these ${count.format(tickets)} tickets, without plate numbers.${capped}`);
 }
 
 // The portal's own row, so a reader can check the source.
 function rowUrl(city, dataset, id) {
-  return portalUrl(city, dataset, { select: "*", where: `${city.columns.source_id} = ${quote(id)}`, limit: 1 });
+  return portalUrl(city, dataset, { select: csvColumns(city), where: `${city.columns.source_id} = ${quote(id)}`, limit: 1 });
 }
 
 // A DOM node; text goes in as text nodes, so portal data never becomes HTML.
