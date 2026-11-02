@@ -11,3 +11,4 @@ dist/
 *.parquet
 .env
 !src/parking_tickets/groups.csv
+web/cities.json
