@@ -331,7 +331,8 @@ async function countSpot(spot, spotLabel) {
       }
     }
     const seconds = ((performance.now() - started) / 1000).toFixed(1);
-    page.status.textContent = `${count.format(groups.tickets)} tickets, read in ${seconds} s.`;
+    const exactMiss = spot.house && groups.tickets === 0 ? " None at that exact house number; try the street alone." : "";
+    page.status.textContent = `${count.format(groups.tickets)} tickets, read in ${seconds} s.${exactMiss}`;
   } catch (error) {
     page.status.textContent = `The city portal did not answer: ${error.message}`;
   } finally {
