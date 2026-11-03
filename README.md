@@ -2,6 +2,8 @@
 
 Parking tickets from many US and Canadian cities in one table: same columns, same violation groups, read straight from each city's open-data portal.
 
+[![The web page: 132 tickets and $8,649 in fines in one Hollywood block over 30 days](docs/screenshot.png)](https://ivanvia7.github.io/parking-tickets/)
+
 Today: Los Angeles, New York City, San Francisco, Philadelphia, Oakland, Winnipeg and Everett WA, over 245 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
 
 ```
