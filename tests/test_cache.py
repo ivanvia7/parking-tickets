@@ -34,6 +34,17 @@ def test_recent_day_is_read_again(tmp_path):
 
 
 @respx.mock
+def test_old_empty_day_is_read_again(tmp_path):
+    route = respx.get(URL).mock(return_value=httpx.Response(200, json=[]))
+    conn = cache.open_cache(tmp_path / "c.db")
+    day = date(2025, 6, 3)
+    api.fetch(conn, "la", day, day)
+    api.fetch(conn, "la", day, day)
+    assert route.call_count == 2
+    assert not cache.is_fetched(conn, "la", "2025-06-03")
+
+
+@respx.mock
 def test_bad_row_is_skipped_and_counted(tmp_path):
     bad = {**FIXTURE[0], "ticket_number": "bad-1", "fine_amount": "n/a"}
     respx.get(URL).mock(return_value=httpx.Response(200, json=[*FIXTURE, bad]))
