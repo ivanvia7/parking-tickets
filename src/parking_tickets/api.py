@@ -67,7 +67,8 @@ def fetch_day(
     before = len(skipped)
     tickets = list(parse_rows(city, rows, load_table(city), skipped))
     # A day with skipped rows stays open, so a fixed city file can read it again.
-    settled = is_settled(day) and len(skipped) == before
+    # An empty day stays open too: Oakland publishes about three months late.
+    settled = is_settled(day) and len(skipped) == before and bool(tickets)
     return cache.save_day(conn, city["slug"], day, tickets, settled)
 
 

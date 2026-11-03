@@ -49,3 +49,8 @@
 **Decided:** 5 tries per call, 120 second read timeout, and Carto's 400 query_wait_timeout counts as busy.
 **Why:** the 2026-11-02 release lost 13 of 85 year jobs to NYC read timeouts and a full Carto queue.
 **Rules out:** retrying every 400; a bad query still fails on the first answer.
+
+## 2026-11-03 — An empty day is never final
+**Decided:** a day that returns no tickets is read again on the next fetch, at any age.
+**Why:** Oakland publishes about three months late; a 30-day-old empty day was cached as final and stayed empty.
+**Rules out:** a per-city settle window kept by hand.
