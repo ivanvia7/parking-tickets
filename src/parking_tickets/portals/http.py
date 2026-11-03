@@ -11,14 +11,17 @@ USER_AGENT = (
 )
 MIN_GAP_SECONDS = 1.0
 RETRY_STATUSES = {429, 500, 502, 503, 504}
-ATTEMPTS = 3
+# The monthly release reads every year of every city; a few slow answers in
+# about 3 million calls are normal, so a call gets 5 tries over about 50 seconds.
+ATTEMPTS = 5
 RETRY_SECONDS = 5.0
 MAX_RETRY_SECONDS = 60.0
 
 # IPv4 only: an IPv6 fallback on some networks hides the real connect error.
 CLIENT = httpx.Client(
     headers={"User-Agent": USER_AGENT},
-    timeout=60,
+    # NYC answered some 2014 days only after more than 60 seconds.
+    timeout=120,
     follow_redirects=True,
     transport=httpx.HTTPTransport(local_address="0.0.0.0"),
 )
@@ -30,6 +33,13 @@ def wait_turn(host: str) -> None:
     if gap < MIN_GAP_SECONDS:
         time.sleep(MIN_GAP_SECONDS - gap)
     _last_call[host] = time.monotonic()
+
+
+def is_busy(response: httpx.Response) -> bool:
+    """Carto answers 400 query_wait_timeout when its query queue is full."""
+    if response.status_code in RETRY_STATUSES:
+        return True
+    return response.status_code == 400 and "query_wait_timeout" in response.text
 
 
 def retry_delay(response: httpx.Response, attempt: int) -> float:
@@ -51,7 +61,7 @@ def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> Any:
                 ) from error
             time.sleep(RETRY_SECONDS * attempt)
         else:
-            if response.status_code not in RETRY_STATUSES or attempt == ATTEMPTS:
+            if not is_busy(response) or attempt == ATTEMPTS:
                 break
             time.sleep(retry_delay(response, attempt))
         attempt += 1

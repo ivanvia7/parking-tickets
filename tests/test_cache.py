@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import httpx
+import pytest
 import respx
 
 from parking_tickets import api, cache
@@ -83,6 +84,30 @@ def test_busy_portal_is_retried(monkeypatch):
     )
     assert get_json(URL, {}, {}) == [{"count": "5"}]
     assert route.call_count == 2
+
+
+@respx.mock
+def test_full_carto_queue_is_retried(monkeypatch):
+    monkeypatch.setattr("parking_tickets.portals.http.RETRY_SECONDS", 0)
+    route = respx.get(URL).mock(
+        side_effect=[
+            httpx.Response(400, json={"error": ["query_wait_timeout"]}),
+            httpx.Response(200, json=[{"count": "7"}]),
+        ]
+    )
+    assert get_json(URL, {}, {}) == [{"count": "7"}]
+    assert route.call_count == 2
+
+
+@respx.mock
+def test_bad_query_is_not_retried(monkeypatch):
+    monkeypatch.setattr("parking_tickets.portals.http.RETRY_SECONDS", 0)
+    route = respx.get(URL).mock(
+        return_value=httpx.Response(400, json={"error": ["column does not exist"]})
+    )
+    with pytest.raises(RuntimeError, match="400"):
+        get_json(URL, {}, {})
+    assert route.call_count == 1
 
 
 def test_retry_after_wait_is_capped():

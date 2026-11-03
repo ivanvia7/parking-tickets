@@ -33,7 +33,7 @@ def test_timeout_after_every_try_names_the_url(monkeypatch):
     monkeypatch.setattr("parking_tickets.portals.http.RETRY_SECONDS", 0)
     route = respx.get(URL).mock(side_effect=httpx.ReadTimeout("slow"))
     with pytest.raises(
-        RuntimeError, match=r"ReadTimeout.*data.lacity.org.*after 3 tries"
+        RuntimeError, match=r"ReadTimeout.*data.lacity.org.*after 5 tries"
     ):
         list(socrata.read("data.lacity.org", "4f5p-udkv", "1=1"))
-    assert route.call_count == 3
+    assert route.call_count == 5
