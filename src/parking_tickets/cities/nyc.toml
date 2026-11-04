@@ -10,6 +10,8 @@ source_url = "https://data.cityofnewyork.us/browse?q=parking%20violations%20issu
 license = "check on portal page"
 # Published files start here; earlier dates are a few typo tickets.
 first_day = "2013-07-01"
+# One day takes about 2 minutes to read; 4 at once keep a year under the 6-hour job cap.
+parallel_days = 4
 
 [datasets_by_fiscal_year]  # one dataset per fiscal year, July to June
 2014 = "jt7v-77mi"

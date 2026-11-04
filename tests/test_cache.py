@@ -124,3 +124,19 @@ def test_bad_query_is_not_retried(monkeypatch):
 def test_retry_after_wait_is_capped():
     response = httpx.Response(429, headers={"Retry-After": "86400"})
     assert retry_delay(response, 1) == 60.0
+
+
+@respx.mock
+def test_parallel_days_each_save_once(tmp_path, monkeypatch):
+    from parking_tickets import cities
+
+    load = cities.load
+    monkeypatch.setattr(
+        api.cities, "load", lambda slug: {**load(slug), "parallel_days": 3}
+    )
+    route = respx.get(URL).mock(return_value=httpx.Response(200, json=FIXTURE))
+    conn = cache.open_cache(tmp_path / "c.db")
+    first, last = date(2025, 6, 3), date(2025, 6, 6)
+    assert api.fetch(conn, "la", first, last) == (4 * len(FIXTURE), [])
+    assert route.call_count == 4
+    assert api.fetch(conn, "la", first, last) == (0, [])

@@ -54,3 +54,8 @@
 **Decided:** a day that returns no tickets is read again on the next fetch, at any age.
 **Why:** Oakland publishes about three months late; a 30-day-old empty day was cached as final and stayed empty.
 **Rules out:** a per-city settle window kept by hand.
+
+## 2026-11-04 — NYC reads 4 days at once
+**Decided:** a city file may set `parallel_days`; NYC uses 4, every other city stays at 1.
+**Why:** NYC scans its whole table per call, about 2 minutes a day; the 2015 job hit the 6-hour cap.
+**Rules out:** splitting a year into half-year files, which breaks one file per city and year.
