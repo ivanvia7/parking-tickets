@@ -1,3 +1,4 @@
+import threading
 import time
 from importlib.metadata import version
 from typing import Any
@@ -26,13 +27,16 @@ CLIENT = httpx.Client(
     transport=httpx.HTTPTransport(local_address="0.0.0.0"),
 )
 _last_call: dict[str, float] = {}
+# Days read on parallel threads still start their calls 1 second apart per host.
+_turn_lock = threading.Lock()
 
 
 def wait_turn(host: str) -> None:
-    gap = time.monotonic() - _last_call.get(host, 0.0)
-    if gap < MIN_GAP_SECONDS:
-        time.sleep(MIN_GAP_SECONDS - gap)
-    _last_call[host] = time.monotonic()
+    with _turn_lock:
+        gap = time.monotonic() - _last_call.get(host, 0.0)
+        if gap < MIN_GAP_SECONDS:
+            time.sleep(MIN_GAP_SECONDS - gap)
+        _last_call[host] = time.monotonic()
 
 
 def is_busy(response: httpx.Response) -> bool:

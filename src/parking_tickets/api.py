@@ -3,6 +3,7 @@ import os
 import sqlite3
 import warnings
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from datetime import date, timedelta
 from pathlib import Path
@@ -60,16 +61,11 @@ def parse_rows(
             skipped.append(f"{error!r} in {row}")
 
 
-def fetch_day(
-    conn: sqlite3.Connection, city: dict, day: str, skipped: list[str]
-) -> int:
+def fetch_day(city: dict, day: str) -> tuple[list[Ticket], list[str]]:
+    """Tickets of one day and the rows that could not be read."""
     rows = PORTALS[city["portal"]].read_day(city, day)
-    before = len(skipped)
-    tickets = list(parse_rows(city, rows, load_table(city), skipped))
-    # A day with skipped rows stays open, so a fixed city file can read it again.
-    # An empty day stays open too: Oakland publishes about three months late.
-    settled = is_settled(day) and len(skipped) == before and bool(tickets)
-    return cache.save_day(conn, city["slug"], day, tickets, settled)
+    skipped: list[str] = []
+    return list(parse_rows(city, rows, load_table(city), skipped)), skipped
 
 
 def fetch(
@@ -79,13 +75,24 @@ def fetch(
     city = cities.load(slug)
     fetched = 0
     skipped: list[str] = []
-    for day in days(since, until):
-        if cache.is_fetched(conn, slug, day):
-            continue
-        try:
-            fetched += fetch_day(conn, city, day, skipped)
-        except (RuntimeError, ValueError) as error:
-            raise RuntimeError(f"{slug} {day}: {error}") from error
+    todo = [day for day in days(since, until) if not cache.is_fetched(conn, slug, day)]
+    # NYC scans its whole table on every call, about 2 minutes a day, so a few
+    # days are read at once; SQLite writes stay on this thread.
+    pool = ThreadPoolExecutor(city.get("parallel_days", 1))
+    try:
+        futures = [pool.submit(fetch_day, city, day) for day in todo]
+        for day, future in zip(todo, futures, strict=True):
+            try:
+                tickets, day_skipped = future.result()
+            except (RuntimeError, ValueError) as error:
+                raise RuntimeError(f"{slug} {day}: {error}") from error
+            skipped += day_skipped
+            # A day with skipped rows stays open, so a fixed city file can read it again.
+            # An empty day stays open too: Oakland publishes about three months late.
+            settled = is_settled(day) and not day_skipped and bool(tickets)
+            fetched += cache.save_day(conn, slug, day, tickets, settled)
+    finally:
+        pool.shutdown(cancel_futures=True)
     return fetched, skipped
 
 
