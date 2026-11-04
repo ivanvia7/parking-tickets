@@ -9,7 +9,7 @@ Today: Los Angeles, New York City, San Francisco, Philadelphia, Oakland, Winnipe
 ```
 $ parking-tickets fetch --city la,sf,nyc --since 2025-06-03 --until 2025-06-03
 $ parking-tickets stats
-la: 7886 rows, 2025-06-03 to 2025-06-03, 99.9% with lat/lon, 3.8% in other
+la: 7886 rows, 2025-06-03 to 2025-06-03, 99.5% with lat/lon, 3.8% in other
 nyc: 53907 rows, 2025-06-03 to 2025-06-03, 0.0% with lat/lon, 2.6% in other
 sf: 5158 rows, 2025-06-03 to 2025-06-03, 98.3% with lat/lon, 3.4% in other
 ```

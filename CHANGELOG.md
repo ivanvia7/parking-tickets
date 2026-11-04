@@ -5,7 +5,7 @@
 First release.
 
 ### Added
-- Cities: Los Angeles, New York City (fiscal-year datasets, fines from the city's code table), San Francisco, Philadelphia (2012 to 2017).
+- Cities: Los Angeles, New York City (fiscal-year datasets, fines from the city's code table), San Francisco, Philadelphia (2012 to 2017), Oakland, Winnipeg and Everett WA.
 - `fetch` into a local SQLite cache, with `--out` to CSV, JSON Lines, SQLite or Parquet.
 - New York violation text from the city's code table.
 - Points outside a city's limits are treated as geocoding errors and left empty.
