@@ -76,10 +76,13 @@ def build(slug: str, since: str, until: str, out: Path) -> None:
 
 
 def count_rows(path: Path) -> int:
-    reader = "read_parquet" if path.suffix == ".parquet" else "read_csv"
-    return duckdb.execute(
-        f"SELECT count(*) FROM {reader}({sql_text(path)})"
-    ).fetchall()[0][0]
+    # A quoted comma can sit past the sniffer's sample, so the quote is named.
+    reader = (
+        f"read_parquet({sql_text(path)})"
+        if path.suffix == ".parquet"
+        else f"read_csv({sql_text(path)}, quote = '\"')"
+    )
+    return duckdb.execute(f"SELECT count(*) FROM {reader}").fetchall()[0][0]
 
 
 def file_entry(path: Path) -> dict:
