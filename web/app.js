@@ -67,8 +67,32 @@ export function tableFine(city, entry, precinct) {
   return amount == null || amount === "" ? null : Number(amount);
 }
 
+// ArcGIS layers holding days since..until; DC keeps one table per month, named by year and month.
+function layerPaths(city, since, until) {
+  const starts = Object.keys(city.layers).sort();
+  const paths = [];
+  const from = since > starts[0] ? since : starts[0];
+  let month = `${from.slice(0, 7)}-01`;
+  while (month <= until) {
+    const start = starts.filter((day) => day <= month).at(-1);
+    const [year, monthNumber] = [Number(month.slice(0, 4)), Number(month.slice(5, 7))];
+    const path = city.layers[start].replace("{year}", String(year)).replace("{month_index}", String(monthNumber - 1));
+    if (!paths.includes(path)) paths.push(path);
+    month = monthNumber === 12 ? `${year + 1}-01-01` : `${year}-${String(monthNumber + 1).padStart(2, "0")}-01`;
+  }
+  return paths;
+}
+
+// ArcGIS sends dates as epoch milliseconds; the city file names the zone its wall clock is in.
+export function wallClock(epochMs, timeZone) {
+  const parts = { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" };
+  // sv-SE writes "2026-01-07 05:30:00", the ISO order.
+  return new Intl.DateTimeFormat("sv-SE", { ...parts, timeZone, hourCycle: "h23" }).format(new Date(epochMs)).replace(" ", "T");
+}
+
 // A NYC day sits in its fiscal-year dataset and the next one; both are read.
 export function datasetsFor(city, since, until) {
+  if (city.layers) return layerPaths(city, since, until);
   if (!city.datasets_by_fiscal_year) return [city.dataset];
   const fiscal = (day) => Number(day.slice(0, 4)) + (Number(day.slice(5, 7)) >= city.fiscal_year_start_month ? 1 : 0);
   const found = [];
@@ -94,6 +118,7 @@ const ROW_LIMIT = 50000;
 const CENTERS = {
   la: [34.0505, -118.2550], sf: [37.7880, -122.4075], philadelphia: [39.9520, -75.1640],
   oakland: [37.8044, -122.2712], winnipeg: [49.8951, -97.1384], everett: [47.9790, -122.2070],
+  dc: [38.9007, -77.0300], syracuse: [43.0481, -76.1474],
 };
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
@@ -169,11 +194,63 @@ function period(city, value) {
   return { since, until };
 }
 
-const hourOf = (city, field) => (city.portal === "carto" ? `extract(hour from ${field})` : `date_extract_hh(${field})`);
-const dowOf = (city, field) => (city.portal === "carto" ? `extract(dow from ${field})` : `date_extract_dow(${field})`);
-const dayOf = (city, field) => (city.portal === "carto" ? `date_trunc('day', ${field})` : `date_trunc_ymd(${field})`);
+function hourOf(city, field) {
+  return { socrata: `date_extract_hh(${field})`, carto: `extract(hour from ${field})`, arcgis: `EXTRACT(HOUR FROM ${field})` }[city.portal];
+}
+// ArcGIS has no weekday function; byWeekday counts its days instead.
+function dowOf(city, field) {
+  return city.portal === "carto" ? `extract(dow from ${field})` : `date_extract_dow(${field})`;
+}
+function dayOf(city, field) {
+  return { socrata: `date_trunc_ymd(${field})`, carto: `date_trunc('day', ${field})`, arcgis: `CAST(${field} AS DATE)` }[city.portal];
+}
+
+// "count(*) AS n, CODE AS code_value" -> [{ expr, alias, stat }].
+function selectItems(select) {
+  return select.split(", ").map((item) => {
+    const [, expr, alias] = /^(.*?)(?: AS (\w+))?$/i.exec(item.trim()); // expression, optional "AS alias"
+    const [, stat, on] = /^(count|sum)\((.*)\)$/i.exec(expr) ?? []; // count(*) or sum(column)
+    return { expr, alias, stat: stat?.toLowerCase(), on };
+  });
+}
+
+// ArcGIS takes the same query as parameters: aggregates go to outStatistics, the rest to outFields or the group.
+function arcgisUrl(city, dataset, q) {
+  const url = new URL(`https://${city.host}/${dataset}/query`);
+  const items = selectItems(q.select);
+  const stats = items.filter((item) => item.stat).map(({ stat, on, alias }) => ({
+    statisticType: stat, onStatisticField: on === "*" ? city.columns.source_id : on, outStatisticFieldName: alias,
+  }));
+  const params = {
+    f: "json", where: q.where, returnGeometry: "false", orderByFields: q.order, resultRecordCount: String(q.limit ?? ROW_LIMIT),
+  };
+  if (stats.length) Object.assign(params, { outStatistics: JSON.stringify(stats), groupByFieldsForStatistics: q.group });
+  else params.outFields = items.map((item) => item.expr).join(",");
+  for (const [key, value] of Object.entries(params)) if (value) url.searchParams.set(key, value);
+  return url;
+}
+
+// Rows back under the names the query asked for. DC upper-cases names and calls a computed
+// value EXPR1, Syracuse EXPR_1; a computed date is UTC wall clock, a column date the city's zone.
+export function arcgisRows(city, body, select) {
+  const dates = new Set(body.fields.filter((f) => f.type === "esriFieldTypeDate").map((f) => f.name));
+  return body.features.map(({ attributes }) => {
+    const row = {};
+    for (const { expr, alias, stat } of selectItems(select)) {
+      const want = (stat ? alias : expr).toLowerCase();
+      const name = Object.keys(attributes).find((key) => key.toLowerCase() === want)
+        ?? Object.keys(attributes).find((key) => /^expr_?\d+$/i.test(key)); // EXPR1 or EXPR_1
+      if (name === undefined) continue;
+      const value = attributes[name];
+      const zone = /^expr/i.test(name) ? "UTC" : city.time_zone; // computed value, not a column
+      row[alias ?? expr] = dates.has(name) && value != null ? wallClock(value, zone) : value;
+    }
+    return row;
+  });
+}
 
 function portalUrl(city, dataset, q) {
+  if (city.portal === "arcgis") return arcgisUrl(city, dataset, q);
   if (city.portal === "carto") {
     const sql = [`SELECT ${q.select} FROM ${dataset} WHERE ${q.where}`,
       q.group && `GROUP BY ${q.group}`, q.order && `ORDER BY ${q.order}`, `LIMIT ${q.limit ?? ROW_LIMIT}`];
@@ -197,7 +274,14 @@ async function query(city, datasets, q) {
       throw new Error(`${response.status} from ${city.host}: ${text.slice(0, 200)}`);
     }
     const body = await response.json();
-    rows.push(...(city.portal === "carto" ? body.rows : body));
+    if (city.portal === "arcgis") {
+      // ArcGIS answers errors with HTTP 200; DC opens next year's service in January, so 404 means no tickets yet.
+      if (body.error?.code === 404) continue;
+      if (body.error) throw new Error(`${body.error.code} from ${city.host}: ${body.error.message}`);
+      rows.push(...arcgisRows(city, body, q.select));
+    } else {
+      rows.push(...(city.portal === "carto" ? body.rows : body));
+    }
   }
   return rows;
 }
@@ -218,6 +302,9 @@ function spotFilter(city, spot) {
 
 function dayFilter(city, { since, until }) {
   const field = city.date_field;
+  if (city.portal === "arcgis") {
+    return `${field} >= TIMESTAMP '${since} 00:00:00' AND ${field} < TIMESTAMP '${addDays(until, 1)} 00:00:00'`;
+  }
   return `${field} >= '${since}T00:00:00' AND ${field} < '${addDays(until, 1)}T00:00:00'`;
 }
 
@@ -284,6 +371,13 @@ async function byHour(city, datasets, where) {
 
 async function byWeekday(city, datasets, where) {
   const days = Array(7).fill(0);
+  if (city.portal === "arcgis") { // no weekday function; count per day and name each day's weekday here
+    const day = dayOf(city, city.date_field);
+    for (const row of await query(city, datasets, { select: `${day} AS day_value, count(*) AS n`, where, group: day })) {
+      days[new Date(`${row.day_value.slice(0, 10)}T00:00:00Z`).getUTCDay()] += Number(row.n);
+    }
+    return days;
+  }
   const expr = dowOf(city, city.date_field);
   for (const row of await query(city, datasets, { select: `${expr} AS dow_value, count(*) AS n`, where, group: expr })) {
     days[Number(row.dow_value)] += Number(row.n);
@@ -451,7 +545,8 @@ async function countSpot(spot, spotLabel) {
     const days = await byWeekday(city, datasets, where);
     if (switched()) return;
     render(city, spotLabel, span, { groups, hours, days });
-    if (groups.tickets) page.answer.querySelector(".body").append(csvButton(city, { span, datasets, where, tickets: groups.tickets }));
+    // ponytail: ArcGIS has no CSV answer and caps pages at 1,000 rows; add paging to offer a CSV.
+    if (groups.tickets && city.portal !== "arcgis") page.answer.querySelector(".body").append(csvButton(city, { span, datasets, where, tickets: groups.tickets }));
     if (!spot.street) {
       page.status.textContent = `Step 4 of ${steps}: placing the newest tickets on the map...`;
       const dots = await newestTickets(city, [datasets.at(-1)], where);
@@ -582,7 +677,7 @@ async function geocode(city, address) {
   const [found] = await response.json();
   if (!found) return null;
   // The bounds also cover towns next door, e.g. 600 S Broadway lands in Redondo Beach.
-  const inCity = found.address.city === city.name;
+  const inCity = found.address.city === (city.nominatim_city ?? city.name);
   return { lat: Number(found.lat), lon: Number(found.lon), name: found.display_name, inCity };
 }
 

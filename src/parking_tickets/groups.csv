@@ -291,3 +291,86 @@ everett,46.19.050(3),disabled
 everett,46.19.050(2),disabled
 everett,46.28.070,disabled
 everett,46.28.070.C.3,disabled
+dc,P281,meter
+dc,P173,street_cleaning
+dc,P170,registration
+dc,P012,no_parking
+dc,P055,no_parking
+dc,P269,no_stopping
+dc,P259,no_stopping
+dc,P003,permit
+dc,P168,plates
+dc,P031,loading_zone
+dc,P159,no_stopping
+dc,P039,meter
+dc,P322,time_limit
+dc,P113,inspection
+dc,P014,no_parking
+dc,P172,registration
+dc,P344,no_parking
+dc,P112,inspection
+dc,P002,no_parking
+dc,P007,bus_zone
+dc,P020,hydrant
+dc,P365,permit
+dc,P304,disabled
+dc,P199,driveway
+dc,P013,driveway
+dc,P363,permit
+dc,P280,meter
+dc,P050,no_parking
+dc,P057,no_parking
+dc,P037,meter
+dc,P271,no_stopping
+dc,P001,double_parking
+dc,P302,no_parking
+dc,P216,meter
+dc,P307,no_parking
+dc,P417,no_stopping
+dc,P270,no_stopping
+dc,P036,permit
+dc,P010,crosswalk
+dc,P022,no_stopping
+dc,P029,no_parking
+dc,P303,disabled
+dc,P042,sidewalk
+dc,P169,plates
+dc,P285,meter
+dc,P278,meter
+dc,P004,no_parking
+dc,P056,no_parking
+dc,P385,bike_lane
+dc,P054,no_parking
+dc,P035,meter
+dc,P046,no_parking
+dc,P111,inspection
+dc,P318,no_parking
+dc,P314,registration
+dc,P047,sidewalk
+dc,P396,permit
+dc,P034,meter
+dc,P430,meter
+dc,P045,no_parking
+syracuse,OVERTIME PRKNG MON-SAT 9AM-6PM CO15-383,time_limit
+syracuse,ODD/EVEN PARKING APR-OCT CO15-318 (A)2,street_cleaning
+syracuse,UNINSPECTED/ ALL TIMES VTL 306-B,inspection
+syracuse,UNREGSTRD/UNAFFIXD/ALL VTL401-1/403-1,registration
+syracuse,NO STOPPING ANY TIME CO15-316 (A)14,no_stopping
+syracuse,PARKED IN LOADING ZONE/ALL CO15-329,loading_zone
+syracuse,NONE/ONE LICENSE PLATE/ALL VTL402-1,plates
+syracuse,NO PERMIT/ALL TIMES CO15-365,permit
+syracuse,NO PARKING ANY TIME CO15-316 (A)14,no_parking
+syracuse,NO STPNG HERE TO CNR/ALL CO15-316(A)6,no_stopping
+syracuse,HANDICAP PRKNG ON-STR /ALL VTL1203(B)2,disabled
+syracuse,PARKED ON SIDEWALK/ALL CO15-316 (A)1,sidewalk
+syracuse,FIRE HYDRANT/ALL TIMES CO15-316 (A)4,hydrant
+syracuse,PRKD 12 IN FROM CURB/ALL CO15-301,no_parking
+syracuse,LEFT WHEELS TO CURB/ALL CO15-301,no_parking
+syracuse,NO PRKNG HERE TO CNR/ALL CO15-316(A)6,no_parking
+syracuse,HANDICAP PARKING-OFF STREET VTL1203C4,disabled
+syracuse,PRKD BLOCKING DRVWY/ALL CO15-316 (A)2,driveway
+syracuse,PRKD BTWN SIDEWALK/CURB CO15-316 (A)1,sidewalk
+syracuse,LIMITED PARKING ONLY 9 AM-6 PM CO15-365,permit
+syracuse,LIMITED PARKING ONLY/ALL TIMES CO15-365,permit
+syracuse,PRKD BLOCKING CRSSWLK/ALL CO15-316 (A)5,crosswalk
+syracuse,DOUBLE PARKING/ALL CO15-316 (A)12,double_parking

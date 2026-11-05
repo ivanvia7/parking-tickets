@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from parking_tickets import cities, groups, schema
-from parking_tickets.portals import socrata
+from parking_tickets.portals import arcgis, socrata
 
 ROOT = Path(__file__).parent.parent
 NODE = shutil.which("node")
@@ -183,3 +183,48 @@ def test_csv_leaves_plate_numbers_out() -> None:
         (columns,) = run_page(city, [["csvColumns"]])
         assert plate not in columns.split(", ")
         assert city["columns"]["plate_state"] in columns.split(", ")
+
+
+def test_arcgis_layers_match() -> None:
+    spans = [
+        ("2026-09-15", "2026-09-15"),
+        ("2025-11-20", "2026-02-03"),
+        ("2001-01-01", "2009-02-01"),  # before the first layer
+    ]
+    for slug in ("dc", "syracuse"):
+        city = web_city(slug)
+        expected = [arcgis.layer_paths(city, *span) for span in spans]
+        assert run_page(city, [["datasetsFor", *span] for span in spans]) == expected
+
+
+def test_arcgis_rows_come_back_under_asked_names() -> None:
+    city = web_city("dc")
+    # DC upper-cases a statistic's name and calls a computed date EXPR1, at UTC midnight.
+    stats = {
+        "fields": [
+            {"name": "EXPR1", "type": "esriFieldTypeDate"},
+            {"name": "N", "type": "esriFieldTypeBigInteger"},
+        ],
+        "features": [{"attributes": {"EXPR1": 1768348800000, "N": 4948}}],
+    }
+    # A column date is the city's own clock: 05:00 UTC is midnight in Washington.
+    columns = {
+        "fields": [{"name": "ISSUE_DATE", "type": "esriFieldTypeDate"}],
+        "features": [{"attributes": {"ISSUE_DATE": 1767762000000}}],
+    }
+    got = run_page(
+        city,
+        [
+            [
+                "arcgisRows",
+                stats,
+                "CAST(ISSUE_DATE AS DATE) AS day_value, count(*) AS n",
+            ],
+            ["arcgisRows", columns, "ISSUE_DATE AS day_value"],
+        ],
+    )
+    assert got == [
+        [{"day_value": "2026-01-14T00:00:00", "n": 4948}],
+        [{"day_value": arcgis.local_text(city, 1767762000000)}],
+    ]
+    assert got[1][0]["day_value"] == "2026-01-07T00:00:00"

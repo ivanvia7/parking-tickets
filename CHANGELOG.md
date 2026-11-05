@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Cities: Washington DC (2009 on) and Syracuse NY (2023 on), read from ArcGIS servers.
+
 ## 0.1.0 - 2026-11-01
 
 First release.
