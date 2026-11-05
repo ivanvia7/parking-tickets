@@ -59,3 +59,8 @@
 **Decided:** a city file may set `parallel_days`; NYC uses 4, every other city stays at 1.
 **Why:** NYC scans its whole table per call, about 2 minutes a day; the 2015 job hit the 6-hour cap.
 **Rules out:** splitting a year into half-year files, which breaks one file per city and year.
+
+## 2026-11-05 — ArcGIS portal for Washington and Syracuse
+**Decided:** a city file may name `portal = "arcgis"` with `layers` by first day and a `time_zone`; DC and Syracuse use it.
+**Why:** Socrata and Carto held no more cities with coordinates and fines; DC alone adds about 1.5 million tickets a year.
+**Rules out:** Baltimore, Brampton, Saint Paul, Mississauga and Charlottesville: no coordinates, no fines, or data ending 2018.
