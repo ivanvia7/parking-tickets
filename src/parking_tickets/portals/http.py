@@ -64,9 +64,14 @@ def get(url: str, params: dict[str, str], headers: dict[str, str]) -> httpx.Resp
                 raise httpx.ReadTimeout(f"no full answer in {CALL_SECONDS:.0f} s")
             chunks.append(chunk)
     # iter_bytes already undid gzip, so the copy must not claim it again.
-    headers = {k: v for k, v in response.headers.items() if k.lower() != "content-encoding"}
+    headers = {
+        k: v for k, v in response.headers.items() if k.lower() != "content-encoding"
+    }
     return httpx.Response(
-        response.status_code, headers=headers, content=b"".join(chunks), request=response.request
+        response.status_code,
+        headers=headers,
+        content=b"".join(chunks),
+        request=response.request,
     )
 
 
