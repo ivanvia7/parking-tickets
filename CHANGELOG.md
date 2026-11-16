@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - 2026-11-17
 
 ### Added
 - Cities: Washington DC (2009 on) and Syracuse NY (2023 on), read from ArcGIS servers.
+
+### Fixed
+- Syracuse's November to March odd/even rule now groups as `street_cleaning`, not `other`.
+- DC's first and last dates in `stats` no longer show a day early.
+- A call to a city server now stops after 300 s, and ArcGIS busy answers are tried again.
 
 ## 0.1.0 - 2026-11-01
 
