@@ -1,13 +1,15 @@
 import json
+import time
 from collections.abc import Iterator
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from parking_tickets.portals.http import get_json
+from parking_tickets.portals.http import ATTEMPTS, RETRY_SECONDS, get_json
 
 # The lowest maxRecordCount among the city servers; a page never comes back cut.
 PAGE_SIZE = 1000
+BUSY_CODES = {500, 503, 504}
 
 
 def months(since: str, until: str) -> Iterator[date]:
@@ -54,6 +56,11 @@ def local_text(city: dict, epoch_ms: int) -> str:
     return moment.strftime("%Y-%m-%dT%H:%M:%S")
 
 
+def stat_day(epoch_ms: int) -> str:
+    """A min or max statistic is the local midnight labelled UTC, unlike rows."""
+    return datetime.fromtimestamp(epoch_ms / 1000, UTC).date().isoformat()
+
+
 def field(attributes: dict, name: str) -> Any:
     """DC answers statistics with upper-cased names; match without case."""
     lowered = {key.lower(): value for key, value in attributes.items()}
@@ -62,7 +69,12 @@ def field(attributes: dict, name: str) -> Any:
 
 def query(city: dict, path: str, params: dict[str, str]) -> dict:
     url = f"https://{city['host']}/{path}/query"
-    body = get_json(url, {**params, "f": "json"}, {})
+    # ArcGIS says it is busy with HTTP 200 and an error code, which get_json cannot see.
+    for attempt in range(1, ATTEMPTS + 1):
+        body = get_json(url, {**params, "f": "json"}, {})
+        if body.get("error", {}).get("code") not in BUSY_CODES or attempt == ATTEMPTS:
+            break
+        time.sleep(RETRY_SECONDS * attempt)
     # ArcGIS answers a bad query with HTTP 200 and an error object.
     # DC opens next year's service in January; until then the year holds no tickets.
     if body.get("error", {}).get("code") == 404:
@@ -167,6 +179,6 @@ def summary(city: dict) -> tuple[int, str | None, str | None]:
             row = feature["attributes"]
             total += int(field(row, "n") or 0)
             first, last = field(row, "first"), field(row, "last")
-            firsts += [local_text(city, first)[:10]] if first is not None else []
-            lasts += [local_text(city, last)[:10]] if last is not None else []
+            firsts += [stat_day(first)] if first is not None else []
+            lasts += [stat_day(last)] if last is not None else []
     return total, min(firsts, default=None), max(lasts, default=None)

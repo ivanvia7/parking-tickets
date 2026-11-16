@@ -78,3 +78,22 @@ def test_count_by_reads_upper_cased_names():
         "P281": 7,
         None: 1,
     }
+
+
+def test_statistic_dates_read_as_utc_midnight():
+    # DC's September 2026 table answers min ISSUE_DATE 2026-09-01 00:00 labelled UTC.
+    assert arcgis.stat_day(1788220800000) == "2026-09-01"
+
+
+@respx.mock
+def test_busy_error_in_a_200_answer_is_tried_again(monkeypatch):
+    monkeypatch.setattr(arcgis, "RETRY_SECONDS", 0)
+    route = respx.get(SEPTEMBER).mock(
+        side_effect=[
+            httpx.Response(200, json={"error": {"code": 500, "message": "busy"}}),
+            page([], more=False),
+        ]
+    )
+    path = SEPTEMBER.removeprefix("https://maps2.dcgis.dc.gov/").removesuffix("/query")
+    assert arcgis.query(DC, path, {})["features"] == []
+    assert route.call_count == 2

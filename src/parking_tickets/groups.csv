@@ -353,6 +353,7 @@ dc,P430,meter
 dc,P045,no_parking
 syracuse,OVERTIME PRKNG MON-SAT 9AM-6PM CO15-383,time_limit
 syracuse,ODD/EVEN PARKING APR-OCT CO15-318 (A)2,street_cleaning
+syracuse,ODD/EVEN PARKING NOV-MAR CO15-318 (A)2,street_cleaning
 syracuse,UNINSPECTED/ ALL TIMES VTL 306-B,inspection
 syracuse,UNREGSTRD/UNAFFIXD/ALL VTL401-1/403-1,registration
 syracuse,NO STOPPING ANY TIME CO15-316 (A)14,no_stopping
