@@ -17,6 +17,9 @@ RETRY_STATUSES = {429, 500, 502, 503, 504}
 ATTEMPTS = 5
 RETRY_SECONDS = 5.0
 MAX_RETRY_SECONDS = 60.0
+# The read timeout counts one silent gap, so a server that drips bytes never trips it;
+# this caps the whole answer.
+CALL_SECONDS = 300.0
 
 # IPv4 only: an IPv6 fallback on some networks hides the real connect error.
 CLIENT = httpx.Client(
@@ -52,12 +55,32 @@ def retry_delay(response: httpx.Response, attempt: int) -> float:
     return min(wait, MAX_RETRY_SECONDS)
 
 
+def get(url: str, params: dict[str, str], headers: dict[str, str]) -> httpx.Response:
+    deadline = time.monotonic() + CALL_SECONDS
+    with CLIENT.stream("GET", url, params=params, headers=headers) as response:
+        chunks = []
+        for chunk in response.iter_bytes():
+            if time.monotonic() > deadline:
+                raise httpx.ReadTimeout(f"no full answer in {CALL_SECONDS:.0f} s")
+            chunks.append(chunk)
+    # iter_bytes already undid gzip, so the copy must not claim it again.
+    headers = {
+        k: v for k, v in response.headers.items() if k.lower() != "content-encoding"
+    }
+    return httpx.Response(
+        response.status_code,
+        headers=headers,
+        content=b"".join(chunks),
+        request=response.request,
+    )
+
+
 def get_json(url: str, params: dict[str, str], headers: dict[str, str]) -> Any:
     attempt = 1
     while True:
         wait_turn(urlsplit(url).netloc)
         try:
-            response = CLIENT.get(url, params=params, headers=headers)
+            response = get(url, params, headers)
         except httpx.TransportError as error:
             if attempt == ATTEMPTS:
                 raise RuntimeError(

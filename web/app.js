@@ -308,6 +308,11 @@ function dayFilter(city, { since, until }) {
   return `${field} >= '${since}T00:00:00' AND ${field} < '${addDays(until, 1)}T00:00:00'`;
 }
 
+// The address box hint; New York searches by street and has its own box.
+const EXAMPLE_ADDRESS = {
+  dc: "1400 U St NW", everett: "2930 Wetmore Ave", la: "200 N Spring St", oakland: "1 Frank H Ogawa Plaza",
+  philadelphia: "1500 Market St", sf: "800 Market St", syracuse: "300 S Clinton St", winnipeg: "393 Portage Ave",
+};
 const codeTables = new Map(); // fine table dataset -> code -> row
 async function fineTable(city) {
   const lookup = city.fine_lookup;
@@ -557,8 +562,9 @@ async function countSpot(spot, spotLabel) {
       }
     }
     const seconds = ((performance.now() - started) / 1000).toFixed(1);
-    const exactMiss = spot.house && groups.tickets === 0
-      ? " None at that exact house number; pick one from the list or try the street alone."
+    const exactMiss = groups.tickets > 0 ? ""
+      : spot.house ? " None at that exact house number; pick one from the list or try the street alone."
+      : spot.street ? ` No tickets on a street named ${spot.street.toUpperCase()}; check the spelling or pick one from the list.`
       : "";
     page.status.textContent = `${count.format(groups.tickets)} tickets, read in ${seconds} s.${exactMiss}`;
   } catch (error) {
@@ -790,6 +796,7 @@ async function pickCity() {
   const city = page.cities[slug];
   const isStreet = searchesByStreet(city);
   page.form.address.value = "";
+  page.form.address.placeholder = `e.g. ${EXAMPLE_ADDRESS[slug] ?? "a street address"}`;
   page.addressList.replaceChildren();
   page.places.clear();
   page.form.street.value = "";
