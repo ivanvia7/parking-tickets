@@ -4,7 +4,7 @@ Parking tickets from many US and Canadian cities in one table: same columns, sam
 
 [![The web page: 132 tickets and $8,649 in fines in one Hollywood block over 30 days](docs/screenshot.png)](https://ivanvia7.github.io/parking-tickets/)
 
-Today: Los Angeles, New York City, San Francisco, Philadelphia, Oakland, Winnipeg and Everett WA, over 245 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
+Today: Los Angeles, New York City, Washington DC, San Francisco, Philadelphia, Oakland, Winnipeg, Syracuse and Everett WA, over 270 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
 
 ```
 $ parking-tickets fetch --city la,sf,nyc --since 2025-06-03 --until 2025-06-03
@@ -58,7 +58,7 @@ Ready Parquet and gzipped CSV files (`.csv.gz`), one per city and year, are on t
 
 Plate numbers are never stored.
 
-The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`, `no_stopping`, `loading_zone`, `bus_zone`, `hydrant`, `double_parking`, `driveway`, `sidewalk`, `crosswalk`, `disabled`, `registration`, `plates`, `inspection`, `bike_lane`, `speed_camera`, `red_light_camera`, `transit_fare`. In one month per city (June 2025; Philadelphia June 2017) at least 96% of tickets landed outside `other`.
+The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`, `no_stopping`, `loading_zone`, `bus_zone`, `hydrant`, `double_parking`, `driveway`, `sidewalk`, `crosswalk`, `disabled`, `registration`, `plates`, `inspection`, `bike_lane`, `speed_camera`, `red_light_camera`, `transit_fare`. In one month per city (June 2025; Philadelphia June 2017) at least 95% of tickets landed outside `other`.
 
 ## Good to know
 
@@ -66,6 +66,9 @@ The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`,
 - New York publishes no coordinates; `lat` and `lon` are empty there, `location` has house number and street.
 - San Francisco's data includes Muni fare evasion citations, group `transit_fare`.
 - Philadelphia publishes 2012 to 2017 only and has no violation code; its groups come from the description text.
+- Washington publishes about five weeks late, with coordinates rounded to about 100 m.
+- Syracuse starts in 2023: its 2007 to 2022 table has no coordinates. Its groups come from the description text.
+- The page offers no CSV for Washington and Syracuse; their servers return at most 1,000 to 2,000 rows a call.
 - New York fines come from the city's violation code table; tickets in Manhattan at or below 96th St get the higher fine, matched by police precinct.
 - Winnipeg fines are Canadian dollars, the full fine before the early-payment discount. Its tickets have no ticket number, so `source_id` is the portal's row id, and since mid-2020 they carry the day only.
 - Everett publishes no fine amounts; `fine_usd` is empty there.

@@ -1,0 +1,31 @@
+name = "Syracuse"
+slug = "syracuse"
+portal = "arcgis"
+host = "services6.arcgis.com"
+date_field = "issued_date"
+# The server writes the local clock as if it were UTC: tickets peak at 10:00 "UTC".
+time_zone = "UTC"
+# No code column; groups.csv lists the description text instead.
+group_by = "violation_text"
+# OpenStreetMap files the city as "City of Syracuse"; the page checks addresses against it.
+nominatim_city = "City of Syracuse"
+source_url = "https://data.syr.gov/datasets/parking-violations-2023-present"
+license = "check on portal page"
+# The 2007 to 2022 table has no coordinates, so the city starts in 2023.
+first_day = "2023-01-01"
+
+[layers]
+"2023-01-01" = "bdPqSfflsdgFRVVM/arcgis/rest/services/Parking_Violations_2023_Present/FeatureServer/0"
+
+[columns]  # our column = city column
+source_id = "ticket_number"
+violation_text = "description"
+fine_usd = "amount"
+location = "location"
+lat = "LAT"
+lon = "LONG"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [42.98, 43.09]
+lon = [-76.21, -76.07]

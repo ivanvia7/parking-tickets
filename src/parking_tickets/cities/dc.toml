@@ -1,0 +1,31 @@
+name = "Washington"
+slug = "dc"
+portal = "arcgis"
+host = "maps2.dcgis.dc.gov"
+date_field = "ISSUE_DATE"
+time_field = "ISSUE_TIME"
+time_format = "hmm"
+# The server's own date time zone (dateFieldsTimeReference); dates come back as epoch milliseconds.
+time_zone = "America/New_York"
+source_url = "https://opendata.dc.gov/search?q=parking%20violations%20issued"
+license = "CC BY 4.0"
+first_day = "2009-01-01"
+
+# One table per month, one service per year.
+[layers]
+"2009-01-01" = "dcgis/rest/services/DCGIS_DATA/Violations_Parking_{year}/MapServer/{month_index}"
+
+[columns]  # our column = city column
+source_id = "TICKET_NUMBER"
+violation_code = "VIOLATION_CODE"
+violation_text = "VIOLATION_PROC_DESC"
+fine_usd = "FINE_AMOUNT"
+location = "LOCATION"
+lat = "LATITUDE"
+lon = "LONGITUDE"
+plate_state = "PLATE_STATE"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [38.79, 39.00]
+lon = [-77.12, -76.90]
