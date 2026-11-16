@@ -70,11 +70,12 @@ def field(attributes: dict, name: str) -> Any:
 def query(city: dict, path: str, params: dict[str, str]) -> dict:
     url = f"https://{city['host']}/{path}/query"
     # ArcGIS says it is busy with HTTP 200 and an error code, which get_json cannot see.
-    for attempt in range(1, ATTEMPTS + 1):
-        body = get_json(url, {**params, "f": "json"}, {})
-        if body.get("error", {}).get("code") not in BUSY_CODES or attempt == ATTEMPTS:
-            break
+    attempt = 1
+    body = get_json(url, {**params, "f": "json"}, {})
+    while body.get("error", {}).get("code") in BUSY_CODES and attempt < ATTEMPTS:
         time.sleep(RETRY_SECONDS * attempt)
+        attempt += 1
+        body = get_json(url, {**params, "f": "json"}, {})
     # ArcGIS answers a bad query with HTTP 200 and an error object.
     # DC opens next year's service in January; until then the year holds no tickets.
     if body.get("error", {}).get("code") == 404:
