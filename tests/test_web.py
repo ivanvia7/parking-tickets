@@ -236,6 +236,14 @@ def test_arcgis_rows_come_back_under_asked_names() -> None:
     assert got[1][0]["day_value"] == "2026-01-07T00:00:00"
 
 
+def test_arcgis_rows_empty_answer_has_no_fields() -> None:
+    # Syracuse answers a square with no tickets as {"features": []}, with no fields list.
+    for slug in ("dc", "syracuse"):
+        empty = {"objectIdFieldName": "ObjectId", "features": []}
+        got = run_page(web_city(slug), [["arcgisRows", empty, "count(*) AS n"]])
+        assert got == [[]]
+
+
 def test_text_number_columns_are_cast_for_buffalo_only() -> None:
     cases = [["asNumber", "latitude"], ["asNumber", "origfine"]]
     assert run_page(web_city("buffalo"), cases) == [
