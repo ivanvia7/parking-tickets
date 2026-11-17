@@ -1,6 +1,6 @@
 [project]
 name = "parking-tickets"
-version = "0.2.0"
+version = "0.3.0"
 description = "Parking tickets from many US cities in one schema, cached in SQLite"
 keywords = ["parking", "tickets", "citations", "open-data", "socrata", "pandas"]
 classifiers = [
