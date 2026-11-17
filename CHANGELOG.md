@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 - 2026-11-17
 
 ### Added
 - City: Buffalo NY (2007 on), grouped by its violation text.
