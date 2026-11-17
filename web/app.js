@@ -237,8 +237,9 @@ function arcgisUrl(city, dataset, q) {
 
 // Rows back under the names the query asked for. DC upper-cases names and calls a computed
 // value EXPR1, Syracuse EXPR_1; a computed date is UTC wall clock, a column date the city's zone.
+// An empty answer has no fields list, only "features": [].
 export function arcgisRows(city, body, select) {
-  const dates = new Set(body.fields.filter((f) => f.type === "esriFieldTypeDate").map((f) => f.name));
+  const dates = new Set((body.fields ?? []).filter((f) => f.type === "esriFieldTypeDate").map((f) => f.name));
   return body.features.map(({ attributes }) => {
     const row = {};
     for (const { expr, alias, stat } of selectItems(select)) {
@@ -483,6 +484,18 @@ function bars(labels, values, format) {
 
 const page = {};
 
+// Every message from a button press: show it on screen, and drop an answer it makes stale.
+function say(text, { stale = false } = {}) {
+  page.status.textContent = text;
+  page.status.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  if (stale) clearAnswer();
+}
+
+function clearAnswer() {
+  page.answer.hidden = true;
+  page.dots.clearLayers();
+}
+
 function dotPopup(city, dataset, { row }) {
   const col = city.columns;
   const stamp = String(row[city.date_field]);
@@ -535,19 +548,21 @@ async function countSpot(spot, spotLabel) {
   page.dots.clearLayers();
   const started = performance.now();
   const steps = spot.street ? 3 : 4;
+  let shown = false; // an answer for this spot is on the page
   try {
     if (!city.newest) { // pickCity's lookup failed or is still running
-      page.status.textContent = `Finding the newest day ${city.name} has published...`;
+      say(`Finding the newest day ${city.name} has published...`);
       city.newest = await newestDay(city);
       if (switched()) return;
     }
     const span = period(city, page.form.period.value);
     const datasets = datasetsFor(city, span.since, span.until);
     const where = [dayFilter(city, span), spotFilter(city, spot)].filter(Boolean).join(" AND ");
-    page.status.textContent = `Step 1 of ${steps}: counting tickets and fines, ${span.since} to ${span.until}...`;
+    say(`Step 1 of ${steps}: counting tickets and fines, ${span.since} to ${span.until}...`);
     const groups = await byGroup(city, datasets, where);
     if (switched()) return;
     render(city, spotLabel, span, { groups });
+    shown = true;
     page.answer.classList.remove("loading");
     page.status.textContent = `Step 2 of ${steps}: reading hours of day...`;
     const hours = await byHour(city, datasets, where);
@@ -572,9 +587,10 @@ async function countSpot(spot, spotLabel) {
       : spot.house ? " None at that exact house number; pick one from the list or try the street alone."
       : spot.street ? ` No tickets on a street named ${spot.street.toUpperCase()}; check the spelling or pick one from the list.`
       : "";
-    page.status.textContent = `${count.format(groups.tickets)} tickets, read in ${seconds} s.${exactMiss}`;
+    const below = spot.street ? "" : " Details below the map.";
+    say(`${count.format(groups.tickets)} tickets, read in ${seconds} s.${exactMiss}${below}`);
   } catch (error) {
-    if (!switched()) page.status.textContent = `The city portal did not answer: ${error.message}`;
+    if (!switched()) say(`The city portal did not answer: ${error.message}`, { stale: !shown });
   } finally {
     setBusy(false);
   }
@@ -658,7 +674,7 @@ function countSquare(city, lat, lon, label) {
     return;
   }
   if (place(city, lat, lon)[0] == null) {
-    page.status.textContent = `That spot is outside ${city.name}.`;
+    say(`That spot is outside ${city.name}.`, { stale: true });
     return;
   }
   const box = square(lat, lon, Number(page.form.size.value));
@@ -736,7 +752,7 @@ function suggestAddresses() {
 async function countAddress(city) {
   const address = page.form.address.value.trim();
   if (!address) {
-    page.status.textContent = "Type an address.";
+    say("Type an address.", { stale: true });
     return;
   }
   const picked = page.places.get(address);
@@ -745,24 +761,24 @@ async function countAddress(city) {
     return;
   }
   setBusy(true);
-  page.status.textContent = `Finding ${address} in ${city.name}...`;
+  say(`Finding ${address} in ${city.name}...`);
   let found;
   try {
     found = await geocode(city, address);
   } catch (error) {
-    page.status.textContent = `The address lookup did not answer: ${error.message}`;
+    say(`The address lookup did not answer: ${error.message}`, { stale: true });
     return;
   } finally {
     setBusy(false);
   }
   if (page.form.city.value !== city.slug) return; // the reader switched city while we waited
   if (!found) {
-    page.status.textContent = `No address "${address}" found in ${city.name}; nothing counted.`;
+    say(`No address "${address}" found in ${city.name}; nothing counted.`, { stale: true });
     return;
   }
   const short = found.name.split(", ").slice(0, 3).join(", "); // the full name runs to county and country
   if (!found.inCity) {
-    page.status.textContent = `The closest match, ${short}, is outside ${city.name}; nothing counted.`;
+    say(`The closest match, ${short}, is outside ${city.name}; nothing counted.`, { stale: true });
     return;
   }
   countSquare(city, found.lat, found.lon, short);
@@ -781,19 +797,19 @@ function countStreet() {
   const street = page.form.street.value.trim();
   const house = page.form.house.value.trim();
   if (!street) {
-    page.status.textContent = "Type a street name.";
+    say("Type a street name.", { stale: true });
     return;
   }
   countSpot({ street, house }, [house, street.toUpperCase()].filter(Boolean).join(" "));
 }
 
 function useLocation() {
-  page.status.textContent = "Asking the browser for your location...";
+  say("Asking the browser for your location...");
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
       countSquare(page.cities[page.form.city.value], coords.latitude, coords.longitude, "your location");
     },
-    (error) => { page.status.textContent = `No location: ${error.message}`; },
+    (error) => { say(`No location: ${error.message}`, { stale: true }); },
   );
 }
 
@@ -819,8 +835,7 @@ async function pickCity() {
   page.addressBox.hidden = isStreet;
   page.streetBox.hidden = !isStreet;
   page.nearButton.hidden = isStreet;
-  page.answer.hidden = true;
-  page.dots.clearLayers();
+  clearAnswer();
   page.box.remove();
   if (!isStreet) {
     page.map.invalidateSize();
@@ -875,6 +890,7 @@ async function start() {
   page.lead.textContent = leadLine(Object.values(page.cities));
   page.form.city.value = "la";
   page.form.city.addEventListener("change", pickCity);
+  page.form.period.addEventListener("change", clearAnswer);
   page.form.addEventListener("submit", search);
   page.form.address.addEventListener("input", suggestAddresses);
   page.form.street.addEventListener("input", suggestStreets);
