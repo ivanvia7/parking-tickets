@@ -15,6 +15,10 @@ def test_hhmmp_time():
     assert hhmmp_time("1208A") == "00:08"
     assert hhmmp_time("1208P") == "12:08"
     assert hhmmp_time("0000") is None
+    # Buffalo writes the same clock as '10:08:00PM' from 2022.
+    assert hhmmp_time("10:08:00PM") == "22:08"
+    assert hhmmp_time("12:45:00AM") == "00:45"
+    assert hhmmp_time("1443PM") is None
 
 
 def test_day_reads_its_fiscal_year_and_the_next():

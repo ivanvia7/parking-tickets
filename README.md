@@ -4,7 +4,7 @@ Parking tickets from many US and Canadian cities in one table: same columns, sam
 
 [![The web page: 132 tickets and $8,649 in fines in one Hollywood block over 30 days](docs/screenshot.png)](https://ivanvia7.github.io/parking-tickets/)
 
-Today: Los Angeles, New York City, Washington DC, San Francisco, Philadelphia, Oakland, Winnipeg, Syracuse and Everett WA, over 270 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
+Today: Los Angeles, New York City, Washington DC, San Francisco, Philadelphia, Oakland, Winnipeg, Syracuse, Buffalo and Everett WA, over 270 million tickets. See [CITIES.md](CITIES.md) for row counts, dates and source links.
 
 ```
 $ parking-tickets fetch --city la,sf,nyc --since 2025-06-03 --until 2025-06-03
@@ -45,7 +45,7 @@ Ready Parquet and gzipped CSV files (`.csv.gz`), one per city and year, are on t
 
 | Column | Meaning |
 |---|---|
-| `city` | slug: `la`, `nyc`, `sf`, `philadelphia`, `oakland`, `winnipeg`, `everett` |
+| `city` | slug: `la`, `nyc`, `sf`, `philadelphia`, `oakland`, `winnipeg`, `everett`, `dc`, `syracuse`, `buffalo` |
 | `source_id` | the city's own ticket number; unique together with `city` |
 | `issued_at` | local time, ISO 8601; date only when the city's time is unreadable |
 | `violation_code` | the city's code as given |

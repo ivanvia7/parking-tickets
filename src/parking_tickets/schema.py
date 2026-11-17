@@ -43,8 +43,8 @@ def hmm_time(value: str) -> str | None:
 
 
 def hhmmp_time(value: str) -> str | None:
-    """'1008P' -> '22:08'; None when the city wrote something unreadable."""
-    match = re.fullmatch(r"(\d\d)(\d\d)([AP])", value)
+    """'1008P' or '10:08:00PM' -> '22:08'; None when the city wrote something unreadable."""
+    match = re.fullmatch(r"(\d\d):?(\d\d)(?::\d\d)?([AP])M?", value)
     if not match or int(match[1]) > 12 or int(match[2]) > 59:
         return None
     hour = int(match[1]) % 12 + (12 if match[3] == "P" else 0)
