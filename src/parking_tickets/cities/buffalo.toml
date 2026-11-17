@@ -1,0 +1,29 @@
+name = "Buffalo"
+slug = "buffalo"
+portal = "socrata"
+host = "data.buffalony.gov"
+dataset = "yvvn-sykd"
+date_field = "summdt"
+time_field = "viotime"
+# '1102A' until 2021, '11:06:00AM' from 2022.
+time_format = "hhmmp"
+# No code column; groups.csv lists the description text instead.
+group_by = "violation_text"
+# Latitude, longitude and fine are text columns; the page casts them to numbers.
+text_numbers = true
+source_url = "https://data.buffalony.gov/d/yvvn-sykd"
+license = "check on portal page"
+first_day = "2007-01-01"
+
+[columns]  # our column = city column
+source_id = "summno"
+violation_text = "viodesc"
+fine_usd = "origfine"
+location = "violation_full_address"
+lat = "latitude"
+lon = "longitude"
+
+# City limits, rounded outward. Points outside are geocoding errors and are dropped.
+[bounds]
+lat = [42.82, 42.97]
+lon = [-78.92, -78.79]

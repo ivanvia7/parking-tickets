@@ -375,3 +375,26 @@ syracuse,LIMITED PARKING ONLY 9 AM-6 PM CO15-365,permit
 syracuse,LIMITED PARKING ONLY/ALL TIMES CO15-365,permit
 syracuse,PRKD BLOCKING CRSSWLK/ALL CO15-316 (A)5,crosswalk
 syracuse,DOUBLE PARKING/ALL CO15-316 (A)12,double_parking
+buffalo,ALTERNATE PARKING,street_cleaning
+buffalo,NO STANDING,no_stopping
+buffalo,METER OVERTIME,meter
+buffalo,NO PARKING,no_parking
+buffalo,EXPIRED INSPECTION STICKER (ALL),inspection
+buffalo,NO INSPECTIONS STICKER (ALL),inspection
+buffalo,EXPIRED REGISTRATION STICKER,registration
+buffalo,NO REGISTRATION STICKER (ALL),registration
+buffalo,UNREGISTERED VEH.ON PRIVATE PROPERTY,registration
+buffalo,PARKED ON SIDEWALK (ALL),sidewalk
+buffalo,PARKED LESS THAN 15 FT - FIRE HYDRANT,hydrant
+buffalo,BLOCKED DRIVEWAY (ALL),driveway
+buffalo,PARKED IN HANDICAPPED AREA,disabled
+buffalo,VEHICLE BLOCKING HANDICAP CURB CUT,disabled
+buffalo,LESS THAN 20 FT FROM CROSSWALK,crosswalk
+buffalo,ONE LICENSE PLATE MISSING (ALL),plates
+buffalo,SWITCHED PLATES (ALL),plates
+buffalo,PARKED MORE THAN 72 HRS. SAME SPOT,time_limit
+buffalo,PARKED BEYOND POSTED TIME LIMIT,time_limit
+buffalo,DOUBLE PARKING,double_parking
+buffalo,NO STOPPING (ALL),no_stopping
+buffalo,LOADING ZONE,loading_zone
+buffalo,BUS RT. NO PARKING 1:30 TO 7:00 AM 11/15-4/1,bus_zone

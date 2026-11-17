@@ -28,6 +28,7 @@ console.log(JSON.stringify(cases.map(([name, ...args]) => app[name](city, ...arg
 
 TIMES = ["904", "0904", "2359", "2400", "1260", "", "abc"]
 NYC_TIMES = ["1008P", "1200A", "1200P", "0145A", "1300P", "0960A", "1008", ""]
+BUFFALO_TIMES = ["1102A", "11:06:00AM", "12:45:00AM", "1443PM", "958A", "21:49", ""]
 OAKLAND_TIMES = ["10:41", "0:05", "23:59", "24:00", "10:60", "1041", "", "10:4"]
 POINTS = [
     ("34.05", "-118.25"),
@@ -52,7 +53,12 @@ def run_page(city: dict, cases: list[list]) -> list:
 
 
 def test_times_match_schema() -> None:
-    for slug, values in (("la", TIMES), ("nyc", NYC_TIMES), ("oakland", OAKLAND_TIMES)):
+    for slug, values in (
+        ("la", TIMES),
+        ("nyc", NYC_TIMES),
+        ("oakland", OAKLAND_TIMES),
+        ("buffalo", BUFFALO_TIMES),
+    ):
         city = web_city(slug)
         expected = [
             schema.TIME_FORMATS[city["time_format"]](v) if v else None for v in values
@@ -228,3 +234,12 @@ def test_arcgis_rows_come_back_under_asked_names() -> None:
         [{"day_value": arcgis.local_text(city, 1767762000000)}],
     ]
     assert got[1][0]["day_value"] == "2026-01-07T00:00:00"
+
+
+def test_text_number_columns_are_cast_for_buffalo_only() -> None:
+    cases = [["asNumber", "latitude"], ["asNumber", "origfine"]]
+    assert run_page(web_city("buffalo"), cases) == [
+        "latitude::number",
+        "origfine::number",
+    ]
+    assert run_page(web_city("la"), [["asNumber", "loc_lat"]]) == ["loc_lat"]

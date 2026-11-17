@@ -11,9 +11,9 @@ function hmmTime(value) {
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
-// '1008P' -> '22:08'; null when the city wrote something unreadable.
+// '1008P' or '10:08:00PM' -> '22:08'; null when the city wrote something unreadable.
 function hhmmpTime(value) {
-  const match = /^(\d\d)(\d\d)([AP])$/.exec(String(value)); // hour, minute, A or P
+  const match = /^(\d\d):?(\d\d)(?::\d\d)?([AP])M?$/.exec(String(value)); // hour, minute, A or P
   if (!match || Number(match[1]) > 12 || Number(match[2]) > 59) return null;
   const hour = (Number(match[1]) % 12) + (match[3] === "P" ? 12 : 0);
   return `${String(hour).padStart(2, "0")}:${match[2]}`;
@@ -118,7 +118,7 @@ const ROW_LIMIT = 50000;
 const CENTERS = {
   la: [34.0505, -118.2550], sf: [37.7880, -122.4075], philadelphia: [39.9520, -75.1640],
   oakland: [37.8044, -122.2712], winnipeg: [49.8951, -97.1384], everett: [47.9790, -122.2070],
-  dc: [38.9007, -77.0300], syracuse: [43.0481, -76.1474],
+  dc: [38.9007, -77.0300], syracuse: [43.0481, -76.1474], buffalo: [42.8864, -78.8784],
 };
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
@@ -203,6 +203,11 @@ function dowOf(city, field) {
 }
 function dayOf(city, field) {
   return { socrata: `date_trunc_ymd(${field})`, carto: `date_trunc('day', ${field})`, arcgis: `CAST(${field} AS DATE)` }[city.portal];
+}
+
+// Buffalo keeps coordinates and fines in text columns; SoQL compares and sums them only as numbers.
+export function asNumber(city, column) {
+  return city.text_numbers ? `${column}::number` : column;
 }
 
 // "count(*) AS n, CODE AS code_value" -> [{ expr, alias, stat }].
@@ -294,7 +299,8 @@ function spotFilter(city, spot) {
     if (spot.house) where.push(`${house} = ${quote(spot.house)}`);
     return where.join(" AND ");
   }
-  const { lat, lon, point } = city.columns;
+  const { point } = city.columns;
+  const [lat, lon] = [asNumber(city, city.columns.lat), asNumber(city, city.columns.lon)];
   const { box } = spot;
   if (point) return `within_box(${point}, ${box.lat[1]}, ${box.lon[0]}, ${box.lat[0]}, ${box.lon[1]})`;
   return `${lat} between ${box.lat[0]} and ${box.lat[1]} AND ${lon} between ${box.lon[0]} and ${box.lon[1]}`;
@@ -310,7 +316,7 @@ function dayFilter(city, { since, until }) {
 
 // The address box hint; New York searches by street and has its own box.
 const EXAMPLE_ADDRESS = {
-  dc: "1400 U St NW", everett: "2930 Wetmore Ave", la: "200 N Spring St", oakland: "1 Frank H Ogawa Plaza",
+  buffalo: "800 Elmwood Ave", dc: "1400 U St NW", everett: "2930 Wetmore Ave", la: "200 N Spring St", oakland: "1 Frank H Ogawa Plaza",
   philadelphia: "1500 Market St", sf: "800 Market St", syracuse: "300 S Clinton St", winnipeg: "393 Portage Ave",
 };
 const codeTables = new Map(); // fine table dataset -> code -> row
@@ -330,7 +336,7 @@ async function byGroup(city, datasets, where) {
   const codeColumn = city.group_column;
   const precinct = city.fine_lookup?.zone_field;
   const select = [`${codeColumn} AS code_value`, "count(*) AS n"];
-  if (city.columns.fine_usd) select.push(`sum(${city.columns.fine_usd}) AS fine_total`);
+  if (city.columns.fine_usd) select.push(`sum(${asNumber(city, city.columns.fine_usd)}) AS fine_total`);
   const groupBy = precinct ? `${codeColumn}, ${precinct}` : codeColumn;
   if (precinct) select.push(`${precinct} AS precinct_value`);
   const rows = await query(city, datasets, { select: select.join(", "), where, group: groupBy });

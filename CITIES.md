@@ -6,6 +6,7 @@ a few typo dates in the past (such as 1950) remain, so a first date can look too
 
 | City | Slug | Rows | First ticket | Last ticket | Source | Last check |
 |---|---|---|---|---|---|---|
+| Buffalo | `buffalo` | 3,099,733 | 2007-01-01 | 2026-11-14 | [data.buffalony.gov](https://data.buffalony.gov/d/yvvn-sykd) | 2026-11-17 |
 | Washington | `dc` | 25,699,271 | 2009-01-01 | 2026-10-31 | [maps2.dcgis.dc.gov](https://opendata.dc.gov/search?q=parking%20violations%20issued) | 2026-11-17 |
 | Everett | `everett` | 86,732 | 2019-02-15 | 2026-11-02 | [data.everettwa.gov](https://data.everettwa.gov/d/j78y-rzpy) | 2026-11-05 |
 | Los Angeles | `la` | 26,061,430 | 1950-07-15 | 2026-11-03 | [data.lacity.org](https://data.lacity.org/d/4f5p-udkv) | 2026-11-05 |
