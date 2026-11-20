@@ -172,22 +172,25 @@ def test_complete_day_keeps_floor_for_small_cities() -> None:
 def test_nyc_fines_and_datasets_match() -> None:
     city = web_city("nyc")
     entry = {"manhattan_96th_st_below": "115", "all_other_areas": "65"}
-    fines = [["tableFine", entry, precinct, "T"] for precinct in ("1", "22", "75")]
+    fines = [["tableFine", entry, precinct, None] for precinct in ("1", "22", "75")]
     fines.append(
-        ["tableFine", {"all_other_areas": "65"}, "1", "T"]
+        ["tableFine", {"all_other_areas": "65"}, "1", None]
     )  # code without a zone amount
-    fines.append(["tableFine", entry, "0", "M"])  # MTA camera: no fine
+    fines.append(["tableFine", entry, "0", "MTA CAMERA BUS STOP"])  # camera: no fine
+    fines.append(
+        ["tableFine", entry, "109", "14-No Standing"]
+    )  # a non-camera description keeps the table fine
     expected_fines = [
         schema.number(
             schema.fine_from_table(
                 city,
                 case[1],
-                {"violation_precinct": case[2], "issuing_agency": case[3]},
+                {"violation_precinct": case[2], "violation_description": case[3]},
             )
         )
         for case in fines
     ]
-    assert expected_fines[-1] is None
+    assert expected_fines[-2] is None and expected_fines[-1] == 65.0
     spans = [
         ("2025-06-30", "2025-06-30"),
         ("2025-07-01", "2025-07-01"),

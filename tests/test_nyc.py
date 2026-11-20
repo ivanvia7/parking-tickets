@@ -93,10 +93,49 @@ def test_mta_camera_ticket_keeps_its_own_text_and_no_fine():
     assert ticket.fine_usd is None
     assert ticket.violation_text == "MTA CAMERA DOUBLE PARKING"
     assert ticket.group == "double_parking"
-    agent = to_ticket(
-        city, {**row, "issuing_agency": "T", "violation_description": ""}, table
-    )
-    assert (
-        agent.fine_usd == 115.0 and agent.violation_text == "NO STANDING-OFF-STREET LOT"
-    )
-    assert agent.group == groups.group_of("nyc", "15")
+
+
+def test_mobile_bus_lane_camera_has_no_fine():
+    # Code 12 lists $250; summons 5607338435 paid $50.
+    city = cities.load("nyc")
+    table = {
+        "12": {"definition": "MOBILE BUS LANE VIOLATION", "all_other_areas": "250"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "12",
+        "issuing_agency": "M",
+        "violation_description": "MOBILE BUS LANE VIOLATION",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd is None and ticket.group == groups.group_of("nyc", "12")
+
+
+def test_hand_written_mta_ticket_keeps_the_code_table_fine():
+    # Summons 1436914826: agency M, code 14, no description; the city charged $115.
+    city = cities.load("nyc")
+    table = {
+        "14": {"definition": "NO STANDING-DAY/TIME LIMITS", "all_other_areas": "115"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "14",
+        "violation_precinct": "109",
+        "issuing_agency": "M",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd == 115.0
+    assert ticket.violation_text == "NO STANDING-DAY/TIME LIMITS"
+
+
+def test_row_description_wins_over_code_table_text():
+    city = cities.load("nyc")
+    table = {"46": {"definition": "DOUBLE PARKING", "all_other_areas": "115"}}
+    row = {
+        **ROWS[0],
+        "violation_code": "46",
+        "violation_description": "46A-Double Parking (Non-COM)",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.violation_text == "46A-Double Parking (Non-COM)"
+    assert ticket.fine_usd == 115.0 and ticket.group == groups.group_of("nyc", "46")

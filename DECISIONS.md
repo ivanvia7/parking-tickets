@@ -69,3 +69,8 @@
 **Decided:** tickets with `issuing_agency` M keep `fine_usd` empty; their own `violation_description` sets text and group.
 **Why:** they reuse DOF codes at $50 and up; the code table charged summons 5700983370 $115 instead of $50.
 **Rules out:** reading `nc67-uf89` per summons, 10 s or more a lookup.
+
+## 2026-11-20 — NYC no-fine rule keys on camera descriptions
+**Decided:** the empty fine applies to the three MTA camera descriptions, not to all `issuing_agency` M rows; replaces the entry above.
+**Why:** hand-written MTA tickets pay the code-table fine (summons 1436914826: $115 both); code 12 cameras paid $50, not $250.
+**Rules out:** keying on the agency.
