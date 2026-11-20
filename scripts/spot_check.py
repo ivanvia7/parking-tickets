@@ -1,8 +1,11 @@
 """Seeded sample of tickets, each compared with its row read straight from the portal.
 
-The portal side is read by hand here, not through the city files, so a wrong city
-file shows up as a mismatch. New York fines are compared with the city's own
-per-ticket record (Open Parking and Camera Violations), not the code table.
+The portal side is read by hand here, not through the package, so errors in turning a
+portal row into a ticket (dates, numbers, joins, code-table fines) show up as mismatches.
+The readers use the same portal columns as the city files, so a wrong column choice does
+not. New York fines are compared with the city's own per-ticket record (Open Parking and
+Camera Violations), not the code table. An empty fine where the city has one is counted
+apart from a wrong amount: New York leaves MTA camera fines empty on purpose.
 Usage: uv run python scripts/spot_check.py [tickets per city] [seed] > docs/spot-check.md
 """
 
@@ -209,8 +212,9 @@ def mismatches(slug: str, ticket: dict, day: date) -> list[tuple[str, Any, Any]]
     theirs = (when, number(fine), violation, location)
     wrong = []
     for field, mine, source in zip(FIELDS, ours, theirs, strict=True):
-        # An empty fine is "not published", never a wrong amount.
         if field == "fine" and mine is None:
+            if source is not None:
+                wrong.append(("blank fine", mine, source))
             continue
         if mine != source:
             wrong.append((field, mine, source))
@@ -241,8 +245,11 @@ def main() -> None:
     print(
         f"Run {datetime.now(UTC).date()} with `{' '.join(['scripts/spot_check.py', *sys.argv[1:]])}`.\n"
     )
+    blank = {f[2] for f in findings if f[3] == "blank fine"}
+    wrong = {f[2] for f in findings if f[3] != "blank fine"}
+    print(f"Tickets with a wrong field: {len(wrong)} of {checked}.")
     print(
-        f"Tickets with a wrong field: {len({f[2] for f in findings})} of {checked}.\n"
+        f"Tickets with an empty fine where the city has one: {len(blank)} of {checked}.\n"
     )
     if findings:
         print(

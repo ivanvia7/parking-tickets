@@ -47,3 +47,37 @@ def test_missing_portal_row_is_reported():
     )
     got = spot_check.mismatches("la", TICKET, date(2025, 1, 30))
     assert got == [("city", "4597755444", "0 portal rows")]
+
+
+NYC_ROW = {
+    "summons_number": "5700983370",
+    "issue_date": "2024-10-27T00:00:00.000",
+    "violation_code": "15",
+    "street_name": "EB W 207th St @ Sher",
+}
+NYC_TICKET = {
+    "source_id": "5700983370",
+    "issued_at": "2024-10-27T20:44:00",
+    "fine_usd": None,
+    "violation_code": "15",
+    "violation_text": "MTA CAMERA DOUBLE PARKING",
+    "location": "EB W 207th St @ Sher",
+}
+
+
+@respx.mock
+def test_nyc_fine_comes_from_the_city_ticket_record():
+    # The fiscal-year dataset has no fine; nc67-uf89 holds what the city charged.
+    respx.get(url__regex=r"/resource/m5vz-tzqv\.json").mock(
+        return_value=httpx.Response(200, json=[NYC_ROW])
+    )
+    respx.get(url__regex=r"/resource/nc67-uf89\.json").mock(
+        return_value=httpx.Response(200, json=[{"fine_amount": "50"}])
+    )
+    day = date(2024, 10, 27)
+    assert spot_check.mismatches("nyc", {**NYC_TICKET, "fine_usd": 50.0}, day) == []
+    assert spot_check.mismatches("nyc", {**NYC_TICKET, "fine_usd": 115.0}, day) == [
+        ("fine", 115.0, 50.0)
+    ]
+    # An empty fine where the city has one is reported apart, not passed.
+    assert spot_check.mismatches("nyc", NYC_TICKET, day) == [("blank fine", None, 50.0)]
