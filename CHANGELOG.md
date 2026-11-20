@@ -3,8 +3,8 @@
 ## Unreleased
 
 ### Fixed
-- New York MTA camera tickets (codes 12, 15 and 43) no longer get a code-table fine they were not charged; their fine is empty and their group comes from their own description.
-- Winnipeg's 2018 to 2025 spellings (`P06No Stop`, `P03Rush Hour` and two more) and its pre-2018 codes without `P` (`01Meter Expired` and 27 more) now group like their current codes.
+- New York bus lane and MTA camera tickets (codes 5, 12, 15, 43 and 90) no longer get a code-table fine they were not charged; their fine is empty, and MTA camera groups come from their own description.
+- 41 older Winnipeg code spellings (`P06No Stop`, `01Meter Expired`, `M06-No Stop` and 38 more) now group like their current codes.
 
 ### Changed
 - New York `violation_text` is the ticket's own description; the code table's wording fills in only when it is blank.

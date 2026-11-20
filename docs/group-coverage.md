@@ -22,8 +22,9 @@ Buffalo's biggest misses are `PARKING WITHOUT CONSENT (ALL)` (251 tickets) and
 
 ## Known gap: Winnipeg before 2018
 
-Winnipeg changed its code spelling twice. Codes like `01Meter Expired` (to about 2018) now
-group like their `P01Meter Expired` twins: 2017 is 85.6% outside `other`. Codes like
-`01 2011 Parked -meter expi` (2012 to about 2016) have no mapping yet: 2014 is 0.0% outside
-`other`. Across 2012 to 2026, about 820,000 Winnipeg tickets remain in `other`, most of them
-in this spelling; `P39Snow Route` and the `RPB Zone` codes make up most of the rest.
+Winnipeg has used several code spellings. Codes like `01Meter Expired` and `M06-No Stop` now
+group like their current twins: 2017 is 88.5% outside `other`. Codes with a space after the
+number, such as `01 2011 Parked -meter expi` and `07 No stopping anytime` (2012 to about 2016),
+have no mapping yet: 2014 is 0.0% outside `other`. Of 1,905,868 Winnipeg tickets from 2012 to
+2026, 816,685 remain in `other`: 682,097 in that spelling and 123,762 under snow-route and
+`RPB Zone` codes, which have no group row.
