@@ -81,7 +81,7 @@ A seeded spot check reads 80 tickets, 8 per city, back from each portal by ticke
 - The page offers no CSV for Washington and Syracuse; their servers return at most 1,000 to 2,000 rows a call.
 - New York fines come from the city's violation code table; tickets in Manhattan at or below 96th St get the higher fine, matched by police precinct.
 - New York's `violation_text` is the ticket's own description, such as `46A-Double Parking (Non-COM)`; the code table's wording fills in only when it is blank.
-- New York's bus lane and MTA camera tickets carry fines that differ from the code table, and the ticket row does not show them; `fine_usd` is empty when the ticket's description names one of these cameras (see `no_fine_values` in `cities/nyc.toml`). Hand-written MTA tickets keep the code table's fine.
+- New York's bus lane and MTA camera tickets carry fines that differ from the code table, and the ticket row does not show them; `fine_usd` is empty when the city's own `violation_description` column names one of these cameras (see `no_fine_values` in `cities/nyc.toml`); a camera ticket with that column blank keeps the code-table fine. Hand-written MTA tickets keep the code table's fine.
 - Winnipeg fines are Canadian dollars, the full fine before the early-payment discount. Its tickets have no ticket number, so `source_id` is the portal's row id, and since mid-2020 they carry the day only.
 - Everett publishes no fine amounts; `fine_usd` is empty there.
 - Oakland publishes about three months late.
