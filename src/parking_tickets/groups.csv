@@ -137,6 +137,7 @@ nyc,33,permit
 nyc,87,permit
 nyc,MTA CAMERA BUS STOP,bus_zone
 nyc,MTA CAMERA DOUBLE PARKING,double_parking
+nyc,MTA B&T WORK ZONE SPEED CAM,speed_camera
 philadelphia,METER EXPIRED CC,meter
 philadelphia,METER EXPIRED,meter
 philadelphia,OVER TIME LIMIT,time_limit

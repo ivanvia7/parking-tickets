@@ -151,3 +151,18 @@ def test_bus_lane_camera_has_no_fine():
         "violation_description": "BUS LANE VIOLATION",
     }
     assert to_ticket(city, row, table).fine_usd is None
+
+
+def test_work_zone_speed_camera_has_no_fine_and_groups_as_speed_camera():
+    # Code 90 lists $25; summons 4510000005 paid $50.
+    city = cities.load("nyc")
+    table = {
+        "90": {"definition": "VEH-SALE/WSHNG/RPRNG/DRIVEWAY", "all_other_areas": "25"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "90",
+        "violation_description": "MTA B&T WORK ZONE SPEED CAM",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd is None and ticket.group == "speed_camera"
