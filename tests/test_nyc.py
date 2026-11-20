@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from parking_tickets import cities
+from parking_tickets import cities, groups
 from parking_tickets.portals.socrata import dataset_ids
 from parking_tickets.schema import hhmmp_time, to_ticket
 
@@ -73,3 +73,30 @@ def test_text_comes_from_code_table_and_blank_amount_is_no_fine():
     assert ticket.fine_usd is None and ticket.group == "street_cleaning"
     unknown = to_ticket(city, {**row, "violation_code": "0"}, table)
     assert unknown.violation_text is None and unknown.group == "other"
+
+
+def test_mta_camera_ticket_keeps_its_own_text_and_no_fine():
+    # Summons 5700983370 (2024-10-27): code 15 is $115 "NO STANDING-OFF-STREET LOT" in the
+    # code table, but the city charged $50 for "MTA CAMERA DOUBLE PARKING".
+    city = cities.load("nyc")
+    table = {
+        "15": {"definition": "NO STANDING-OFF-STREET LOT", "all_other_areas": "115"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "15",
+        "violation_precinct": "0",
+        "issuing_agency": "M",
+        "violation_description": "MTA CAMERA DOUBLE PARKING",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd is None
+    assert ticket.violation_text == "MTA CAMERA DOUBLE PARKING"
+    assert ticket.group == "double_parking"
+    agent = to_ticket(
+        city, {**row, "issuing_agency": "T", "violation_description": ""}, table
+    )
+    assert (
+        agent.fine_usd == 115.0 and agent.violation_text == "NO STANDING-OFF-STREET LOT"
+    )
+    assert agent.group == groups.group_of("nyc", "15")

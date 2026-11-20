@@ -13,6 +13,9 @@ first_day = "2013-07-01"
 # One day takes about 2 minutes to read; 4 at once keep a year under the 6-hour job cap.
 parallel_days = 4
 
+# MTA camera tickets reuse codes 15 and 43; their own text in groups.csv picks the group.
+text_groups_first = true
+
 [datasets_by_fiscal_year]  # one dataset per fiscal year, July to June
 2014 = "jt7v-77mi"
 2015 = "c284-tqph"
@@ -32,6 +35,8 @@ parallel_days = 4
 [columns]  # our column = city column
 source_id = "summons_number"
 violation_code = "violation_code"
+# Blank on most tickets; MTA camera tickets name their own offence here, unlike the code table.
+violation_text = "violation_description"
 location = ["house_number", "street_name"]
 plate_state = "registration_state"
 
@@ -45,4 +50,8 @@ amount_field = "all_other_areas"
 zone_amount_field = "manhattan_96th_st_below"
 zone_field = "violation_precinct"
 # Known limit: Manhattan precincts at or below 96th St; 22 and 24 straddle 96th, upgrade is geocoding house number + street.
+# MTA bus cameras (agency M) reuse these codes but fine on their own scale, $50 and up for repeats;
+# the ticket row has no amount, so their fine stays empty rather than wrong.
+no_fine_field = "issuing_agency"
+no_fine_values = ["M"]
 zone_values = ["1", "5", "6", "7", "9", "10", "13", "14", "17", "18", "19", "20", "22"]
