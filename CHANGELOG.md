@@ -3,8 +3,11 @@
 ## Unreleased
 
 ### Fixed
-- New York MTA bus camera tickets no longer get a code-table fine they were not charged; their fine is empty, their text and group come from their own description.
-- Winnipeg's 2024 code spellings (`P06No Stop`, `P03Rush Hour` and two more) group as `no_stopping`, not `other`.
+- New York MTA camera tickets (codes 12, 15 and 43) no longer get a code-table fine they were not charged; their fine is empty and their group comes from their own description.
+- Winnipeg's 2018 to 2025 spellings (`P06No Stop`, `P03Rush Hour` and two more) and its pre-2018 codes without `P` (`01Meter Expired` and 27 more) now group like their current codes.
+
+### Changed
+- New York `violation_text` is the ticket's own description; the code table's wording fills in only when it is blank.
 
 ### Added
 - `scripts/spot_check.py` compares a seeded ticket sample with each portal row; `docs/spot-check.md` holds the last result.

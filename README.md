@@ -68,7 +68,7 @@ nyc,9208377283,2025-06-03T08:32:00,46,46A-Double Parking (Non-COM),double_parkin
 
 The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`, `no_stopping`, `loading_zone`, `bus_zone`, `hydrant`, `double_parking`, `driveway`, `sidewalk`, `crosswalk`, `disabled`, `registration`, `plates`, `inspection`, `bike_lane`, `speed_camera`, `red_light_camera`, `transit_fare`. On a month the groups were not tuned on, 94.6% (Buffalo) to 100% (Everett) of tickets land outside `other`; see [docs/group-coverage.md](docs/group-coverage.md).
 
-A seeded spot check reads 80 tickets, 8 per city, back from each portal by ticket number and compares date, fine, violation and location: 0 of 80 wrong on 2026-11-20 ([docs/spot-check.md](docs/spot-check.md), `scripts/spot_check.py`).
+A seeded spot check reads 80 tickets, 8 per city, back from each portal by ticket number and compares date, fine, violation and location; New York fines are compared with the city's own record of each ticket. It catches errors in turning a portal row into a ticket, not a wrong choice of column. Last result: [docs/spot-check.md](docs/spot-check.md).
 
 ## Good to know
 
@@ -80,7 +80,8 @@ A seeded spot check reads 80 tickets, 8 per city, back from each portal by ticke
 - Syracuse starts in 2023: its 2007 to 2022 table has no coordinates. Its groups come from the description text.
 - The page offers no CSV for Washington and Syracuse; their servers return at most 1,000 to 2,000 rows a call.
 - New York fines come from the city's violation code table; tickets in Manhattan at or below 96th St get the higher fine, matched by police precinct.
-- New York's MTA bus camera tickets (about 7% of NYC rows) reuse the city's codes on their own fine scale; `fine_usd` is empty for them and `violation_text` is their own description.
+- New York's `violation_text` is the ticket's own description, such as `46A-Double Parking (Non-COM)`; the code table's wording fills in only when it is blank.
+- New York's MTA camera tickets (codes 12, 15 and 43, about 8% of NYC rows in October 2025) are fined on their own scale, which is not published per ticket; `fine_usd` is empty for them. Hand-written MTA tickets keep the code table's fine.
 - Winnipeg fines are Canadian dollars, the full fine before the early-payment discount. Its tickets have no ticket number, so `source_id` is the portal's row id, and since mid-2020 they carry the day only.
 - Everett publishes no fine amounts; `fine_usd` is empty there.
 - Oakland publishes about three months late.
