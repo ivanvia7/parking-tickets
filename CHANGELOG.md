@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- New York MTA bus camera tickets no longer get a code-table fine they were not charged; their fine is empty, their text and group come from their own description.
+- Winnipeg's 2024 code spellings (`P06No Stop`, `P03Rush Hour` and two more) group as `no_stopping`, not `other`.
+
+### Added
+- `scripts/spot_check.py` compares a seeded ticket sample with each portal row; `docs/spot-check.md` holds the last result.
+- `docs/group-coverage.md`: group coverage on months the groups were not tuned on.
+
 ## 0.3.0 - 2026-11-17
 
 ### Added
