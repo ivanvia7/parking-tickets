@@ -3,9 +3,15 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # requires-python says 3.11, so 3.11 is tested, not only .python-version.
+        python: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
       - run: uv sync
       - run: uv run ruff check
       - run: uv run ruff format --check

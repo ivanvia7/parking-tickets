@@ -13,6 +13,9 @@ first_day = "2013-07-01"
 # One day takes about 2 minutes to read; 4 at once keep a year under the 6-hour job cap.
 parallel_days = 4
 
+# MTA camera tickets reuse codes 15 and 43 for other offences; their own text in groups.csv picks the group.
+text_groups_first = true
+
 [datasets_by_fiscal_year]  # one dataset per fiscal year, July to June
 2014 = "jt7v-77mi"
 2015 = "c284-tqph"
@@ -32,6 +35,9 @@ parallel_days = 4
 [columns]  # our column = city column
 source_id = "summons_number"
 violation_code = "violation_code"
+# The ticket's own description, e.g. "46A-Double Parking (Non-COM)"; the code table's
+# definition only when it is blank. MTA camera tickets name their real offence only here.
+violation_text = "violation_description"
 location = ["house_number", "street_name"]
 plate_state = "registration_state"
 
@@ -45,4 +51,15 @@ amount_field = "all_other_areas"
 zone_amount_field = "manhattan_96th_st_below"
 zone_field = "violation_precinct"
 # Known limit: Manhattan precincts at or below 96th St; 22 and 24 straddle 96th, upgrade is geocoding house number + street.
+# Bus lane and MTA camera fines differ from the code table's one amount
+# (code 5 lists $250; summonses 4053271277 and 4053270546 paid $50 and $150). The row has no
+# amount, so the fine stays empty. Hand-written MTA tickets keep the table fine (1436914826: $115).
+no_fine_field = "violation_description"
+no_fine_values = [
+    "MTA CAMERA DOUBLE PARKING",
+    "MTA CAMERA BUS STOP",
+    "MOBILE BUS LANE VIOLATION",
+    "BUS LANE VIOLATION",
+    "MTA B&T WORK ZONE SPEED CAM",
+]
 zone_values = ["1", "5", "6", "7", "9", "10", "13", "14", "17", "18", "19", "20", "22"]

@@ -64,3 +64,18 @@
 **Decided:** a city file may name `portal = "arcgis"` with `layers` by first day and a `time_zone`; DC and Syracuse use it.
 **Why:** Socrata and Carto held no more cities with coordinates and fines; DC alone adds about 1.5 million tickets a year.
 **Rules out:** Baltimore, Brampton, Saint Paul, Mississauga and Charlottesville: no coordinates, no fines, or data ending 2018.
+
+## 2026-11-20 — NYC MTA camera tickets get no fine
+**Decided:** tickets with `issuing_agency` M keep `fine_usd` empty; their own `violation_description` sets text and group.
+**Why:** they reuse DOF codes at $50 and up; the code table charged summons 5700983370 $115 instead of $50.
+**Rules out:** reading `nc67-uf89` per summons, 10 s or more a lookup.
+
+## 2026-11-20 — NYC no-fine rule keys on camera descriptions
+**Decided:** the empty fine applies to the three MTA camera descriptions, not to all `issuing_agency` M rows; replaces the entry above.
+**Why:** hand-written MTA tickets pay the code-table fine (summons 1436914826: $115 both); code 12 cameras paid $50, not $250.
+**Rules out:** keying on the agency.
+
+## 2026-11-20 — Bus lane and work-zone cameras join the no-fine list
+**Decided:** `BUS LANE VIOLATION` and `MTA B&T WORK ZONE SPEED CAM` get an empty fine too.
+**Why:** camera fines do not match the table: code 5 lists $250 but $50 and $150 were paid; code 90 lists $25 but summons 4510000005 paid $50.
+**Rules out:** a per-camera default amount.

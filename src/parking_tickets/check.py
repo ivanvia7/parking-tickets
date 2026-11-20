@@ -10,6 +10,7 @@ def city_columns(city: dict) -> list[str]:
         city["date_field"],
         city.get("time_field"),
         city.get("fine_lookup", {}).get("zone_field"),
+        city.get("fine_lookup", {}).get("no_fine_field"),
     ]
     for source in city["columns"].values():
         names.extend([source] if isinstance(source, str) else source)

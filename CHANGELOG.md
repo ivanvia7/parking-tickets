@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- New York bus lane and MTA camera tickets (codes 5, 12, 15, 43 and 90) no longer get a code-table fine they were not charged; their fine is empty when their description names the camera, and MTA camera groups come from that description.
+- 41 older Winnipeg code spellings (`P06No Stop`, `01Meter Expired`, `M06-No Stop` and 38 more) now group like their current codes.
+
+### Changed
+- New York `violation_text` is the ticket's own description; the code table's wording fills in only when it is blank.
+
+### Added
+- `scripts/spot_check.py` compares a seeded ticket sample with each portal row; `docs/spot-check.md` holds the last result.
+- `docs/group-coverage.md`: group coverage on months the groups were not tuned on.
+
 ## 0.3.0 - 2026-11-17
 
 ### Added

@@ -1,6 +1,7 @@
 # parking-tickets
 
 Parking tickets from many US and Canadian cities in one table: same columns, same violation groups, read straight from each city's open-data portal.
+Built for reporters, researchers and residents who want to compare tickets by block, violation or hour without learning ten portals.
 
 [![The web page: 132 tickets and $8,649 in fines in one Hollywood block over 30 days](docs/screenshot.png)](https://ivanvia7.github.io/parking-tickets/)
 
@@ -56,9 +57,18 @@ Ready Parquet and gzipped CSV files (`.csv.gz`), one per city and year, are on t
 | `lat`, `lon` | empty when missing or outside the city limits (a geocoding error) |
 | `plate_state` | two letters |
 
-Plate numbers are never stored.
+Plate numbers are never stored. Three rows of `--out tickets.csv`:
 
-The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`, `no_stopping`, `loading_zone`, `bus_zone`, `hydrant`, `double_parking`, `driveway`, `sidewalk`, `crosswalk`, `disabled`, `registration`, `plates`, `inspection`, `bike_lane`, `speed_camera`, `red_light_camera`, `transit_fare`. In one month per city (June 2025; Philadelphia June 2017) at least 95% of tickets landed outside `other`.
+```
+city,source_id,issued_at,violation_code,violation_text,group,fine_usd,location,lat,lon,plate_state
+la,4604490951,2025-06-03T08:12:00,88.13B+,METER EXP.,meter,63.0,2022 SEPULVEDA BL S,34.0427087,-118.4399768,CA
+sf,988416881,2025-06-03T17:53:00,TRC7.2.20,RES/OT,permit,108.0,755 FRANCISCO ST,37.804137584635,-122.417655936431,CA
+nyc,9208377283,2025-06-03T08:32:00,46,46A-Double Parking (Non-COM),double_parking,115.0,1200 College Ave,,,NY
+```
+
+The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`, `no_stopping`, `loading_zone`, `bus_zone`, `hydrant`, `double_parking`, `driveway`, `sidewalk`, `crosswalk`, `disabled`, `registration`, `plates`, `inspection`, `bike_lane`, `speed_camera`, `red_light_camera`, `transit_fare`. On a month the groups were not tuned on, 94.6% (Buffalo) to 100% (Everett) of tickets land outside `other`; see [docs/group-coverage.md](docs/group-coverage.md).
+
+A seeded spot check reads 80 tickets, 8 per city, back from each portal by ticket number and compares date, fine, violation and location; New York fines are compared with the city's own record of each ticket. It catches errors in turning a portal row into a ticket, not a wrong choice of column, and 8 tickets per city can miss a whole ticket type, such as New York bus lane cameras. Last result: [docs/spot-check.md](docs/spot-check.md).
 
 ## Good to know
 
@@ -70,10 +80,13 @@ The 21 groups: `street_cleaning`, `meter`, `time_limit`, `permit`, `no_parking`,
 - Syracuse starts in 2023: its 2007 to 2022 table has no coordinates. Its groups come from the description text.
 - The page offers no CSV for Washington and Syracuse; their servers return at most 1,000 to 2,000 rows a call.
 - New York fines come from the city's violation code table; tickets in Manhattan at or below 96th St get the higher fine, matched by police precinct.
+- New York's `violation_text` is the ticket's own description, such as `46A-Double Parking (Non-COM)`; the code table's wording fills in only when it is blank.
+- New York's bus lane and MTA camera tickets carry fines that differ from the code table, and the ticket row does not show them; `fine_usd` is empty when the city's own `violation_description` column names one of these cameras (see `no_fine_values` in `cities/nyc.toml`); a camera ticket with that column blank keeps the code-table fine. Hand-written MTA tickets keep the code table's fine.
 - Winnipeg fines are Canadian dollars, the full fine before the early-payment discount. Its tickets have no ticket number, so `source_id` is the portal's row id, and since mid-2020 they carry the day only.
 - Everett publishes no fine amounts; `fine_usd` is empty there.
 - Oakland publishes about three months late.
 - Days in the last 30 days are read again on every fetch, because cities keep adding late tickets.
+- A day of New York takes about a minute to read (30,000 to 54,000 tickets); other cities take seconds, and a cached day is instant.
 
 ## Commands
 

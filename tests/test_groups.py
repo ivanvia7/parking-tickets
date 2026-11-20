@@ -96,3 +96,14 @@ def test_carto_count_by_sends_group_by():
     sql = route.calls[0].request.url.params["q"]
     assert counts == {"SIDEWALK": 3}
     assert "GROUP BY violation_desc" in sql and "< '2017-07-01'" in sql
+
+
+def test_winnipeg_2024_spellings_are_grouped():
+    # April 2024 rows write the code and text without a hyphen or shortened;
+    # they held 19.7% of the month in `other` before these rows existed.
+    for code in ("P06No Stop", "MP06-No Stop", "P03Rush Hour", "MP03-Rush Hour"):
+        assert groups.group_of("winnipeg", code) == "no_stopping"
+    # Before about 2018 the same codes had no P: 2017 went from 0% to 88.5% grouped.
+    assert groups.group_of("winnipeg", "01Meter Expired") == "meter"
+    assert groups.group_of("winnipeg", "06No Stop") == "no_stopping"
+    assert groups.group_of("winnipeg", "M06-No Stop") == "no_stopping"

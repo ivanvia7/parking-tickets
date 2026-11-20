@@ -38,6 +38,12 @@ export function groupOf(city, code) {
   return city.groups[String(code).trim()] ?? UNGROUPED;
 }
 
+// A city with text_groups_first lets a listed text beat its code (NYC MTA camera tickets).
+export function ticketGroup(city, code, text) {
+  const listed = city.groups[String(text ?? "").trim()];
+  return city.text_groups_first && listed ? listed : groupOf(city, code);
+}
+
 // Raw lat and lon; a point column holds GeoJSON coordinates [lon, lat].
 export function coords(city, row) {
   const col = city.columns;
@@ -59,9 +65,10 @@ export function place(city, latRaw, lonRaw) {
 }
 
 // NYC fines come from the code table; Manhattan at or below 96th St pays the zone amount.
-export function tableFine(city, entry, precinct) {
+// MTA camera tickets fine on their own unpublished scale, so their fine stays empty.
+export function tableFine(city, entry, precinct, text) {
   const lookup = city.fine_lookup;
-  if (!entry) return null;
+  if (!entry || (lookup.no_fine_values ?? []).includes(text)) return null;
   const inZone = lookup.zone_values.includes(precinct);
   const amount = entry[inZone ? lookup.zone_amount_field : lookup.amount_field];
   return amount == null || amount === "" ? null : Number(amount);
@@ -336,10 +343,14 @@ async function fineTable(city) {
 async function byGroup(city, datasets, where) {
   const codeColumn = city.group_column;
   const precinct = city.fine_lookup?.zone_field;
+  const text = city.text_groups_first ? city.columns.violation_text : null;
+  const noFineColumn = city.fine_lookup?.no_fine_field;
   const select = [`${codeColumn} AS code_value`, "count(*) AS n"];
   if (city.columns.fine_usd) select.push(`sum(${asNumber(city, city.columns.fine_usd)}) AS fine_total`);
-  const groupBy = precinct ? `${codeColumn}, ${precinct}` : codeColumn;
+  const groupBy = [...new Set([codeColumn, precinct, text, noFineColumn].filter(Boolean))].join(", ");
   if (precinct) select.push(`${precinct} AS precinct_value`);
+  if (text) select.push(`${text} AS text_value`);
+  if (noFineColumn) select.push(`${noFineColumn} AS no_fine_value`);
   const rows = await query(city, datasets, { select: select.join(", "), where, group: groupBy });
   const fines = city.fine_lookup ? await fineTable(city) : null;
   const groups = new Map();
@@ -348,10 +359,10 @@ async function byGroup(city, datasets, where) {
   let noFine = 0;
   for (const row of rows) {
     const n = Number(row.n);
-    const each = fines ? tableFine(city, fines[row.code_value], row.precinct_value) : null;
+    const each = fines ? tableFine(city, fines[row.code_value], row.precinct_value, row.no_fine_value) : null;
     if (fines && each == null) noFine += n;
     const fine = fines ? (each ?? 0) * n : Number(row.fine_total ?? 0);
-    const group = groupOf(city, row.code_value);
+    const group = ticketGroup(city, row.code_value, row.text_value);
     groups.set(group, (groups.get(group) ?? 0) + n);
     tickets += n;
     total += fine;
@@ -532,7 +543,7 @@ function render(city, spotLabel, span, result) {
       (n) => `${Math.round((100 * n) / Math.max(1, tickets))}%`),
     ...timing);
   const notes = [`Read live from ${city.host}, the same rows parking-tickets fetch reads.`];
-  if (noFine) notes.push(`${count.format(noFine)} tickets have a code without a fine and add no money.`);
+  if (noFine) notes.push(`${count.format(noFine)} tickets have no published fine and add no money.`);
   if (city.last_day) notes.push(`${city.name} data stops ${city.last_day}.`);
   if (!hasFines) notes.push(`${city.name} publishes no fine amounts.`);
   if (city.currency) notes.push(`Fines in ${city.currency}.`);

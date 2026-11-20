@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from parking_tickets import cities
+from parking_tickets import cities, groups
 from parking_tickets.portals.socrata import dataset_ids
 from parking_tickets.schema import hhmmp_time, to_ticket
 
@@ -73,3 +73,96 @@ def test_text_comes_from_code_table_and_blank_amount_is_no_fine():
     assert ticket.fine_usd is None and ticket.group == "street_cleaning"
     unknown = to_ticket(city, {**row, "violation_code": "0"}, table)
     assert unknown.violation_text is None and unknown.group == "other"
+
+
+def test_mta_camera_ticket_keeps_its_own_text_and_no_fine():
+    # Summons 5700983370 (2024-10-27): code 15 is $115 "NO STANDING-OFF-STREET LOT" in the
+    # code table, but the city charged $50 for "MTA CAMERA DOUBLE PARKING".
+    city = cities.load("nyc")
+    table = {
+        "15": {"definition": "NO STANDING-OFF-STREET LOT", "all_other_areas": "115"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "15",
+        "violation_precinct": "0",
+        "issuing_agency": "M",
+        "violation_description": "MTA CAMERA DOUBLE PARKING",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd is None
+    assert ticket.violation_text == "MTA CAMERA DOUBLE PARKING"
+    assert ticket.group == "double_parking"
+
+
+def test_mobile_bus_lane_camera_has_no_fine():
+    # Code 12 lists $250; summons 5607338435 paid $50.
+    city = cities.load("nyc")
+    table = {
+        "12": {"definition": "MOBILE BUS LANE VIOLATION", "all_other_areas": "250"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "12",
+        "issuing_agency": "M",
+        "violation_description": "MOBILE BUS LANE VIOLATION",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd is None and ticket.group == groups.group_of("nyc", "12")
+
+
+def test_hand_written_mta_ticket_keeps_the_code_table_fine():
+    # Summons 1436914826: agency M, code 14, no description; the city charged $115.
+    city = cities.load("nyc")
+    table = {
+        "14": {"definition": "NO STANDING-DAY/TIME LIMITS", "all_other_areas": "115"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "14",
+        "violation_precinct": "109",
+        "issuing_agency": "M",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd == 115.0
+    assert ticket.violation_text == "NO STANDING-DAY/TIME LIMITS"
+
+
+def test_row_description_wins_over_code_table_text():
+    city = cities.load("nyc")
+    table = {"46": {"definition": "DOUBLE PARKING", "all_other_areas": "115"}}
+    row = {
+        **ROWS[0],
+        "violation_code": "46",
+        "violation_description": "46A-Double Parking (Non-COM)",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.violation_text == "46A-Double Parking (Non-COM)"
+    assert ticket.fine_usd == 115.0 and ticket.group == groups.group_of("nyc", "46")
+
+
+def test_bus_lane_camera_has_no_fine():
+    # Code 5 lists $250; summonses 4053271277 and 4053270546 paid $50 and $150.
+    city = cities.load("nyc")
+    table = {"5": {"definition": "BUS LANE VIOLATION", "all_other_areas": "250"}}
+    row = {
+        **ROWS[0],
+        "violation_code": "5",
+        "violation_description": "BUS LANE VIOLATION",
+    }
+    assert to_ticket(city, row, table).fine_usd is None
+
+
+def test_work_zone_speed_camera_has_no_fine_and_groups_as_speed_camera():
+    # Code 90 lists $25; summons 4510000005 paid $50.
+    city = cities.load("nyc")
+    table = {
+        "90": {"definition": "VEH-SALE/WSHNG/RPRNG/DRIVEWAY", "all_other_areas": "25"}
+    }
+    row = {
+        **ROWS[0],
+        "violation_code": "90",
+        "violation_description": "MTA B&T WORK ZONE SPEED CAM",
+    }
+    ticket = to_ticket(city, row, table)
+    assert ticket.fine_usd is None and ticket.group == "speed_camera"

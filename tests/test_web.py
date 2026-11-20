@@ -75,6 +75,20 @@ def test_groups_match_groups_csv() -> None:
         assert run_page(city, [["groupOf", code] for code in codes]) == expected
 
 
+def test_ticket_groups_match_for_listed_texts() -> None:
+    city = web_city("nyc")
+    cases = [
+        ("43", "MTA CAMERA BUS STOP"),
+        ("15", "MTA CAMERA DOUBLE PARKING"),
+        ("43", None),
+        ("43", "NOT A LISTED TEXT"),
+    ]
+    expected = [groups.ticket_group(city, code, text) for code, text in cases]
+    assert expected[:2] == ["bus_zone", "double_parking"]
+    got = run_page(city, [["ticketGroup", code, text] for code, text in cases])
+    assert got == expected
+
+
 def test_places_match_schema() -> None:
     city = web_city("la")
     expected = [list(schema.place(city, lat, lon)) for lat, lon in POINTS]
@@ -158,16 +172,25 @@ def test_complete_day_keeps_floor_for_small_cities() -> None:
 def test_nyc_fines_and_datasets_match() -> None:
     city = web_city("nyc")
     entry = {"manhattan_96th_st_below": "115", "all_other_areas": "65"}
-    fines = [["tableFine", entry, precinct] for precinct in ("1", "22", "75")]
+    fines = [["tableFine", entry, precinct, None] for precinct in ("1", "22", "75")]
     fines.append(
-        ["tableFine", {"all_other_areas": "65"}, "1"]
+        ["tableFine", {"all_other_areas": "65"}, "1", None]
     )  # code without a zone amount
+    fines.append(["tableFine", entry, "0", "MTA CAMERA BUS STOP"])  # camera: no fine
+    fines.append(
+        ["tableFine", entry, "109", "14-No Standing"]
+    )  # a non-camera description keeps the table fine
     expected_fines = [
         schema.number(
-            schema.fine_from_table(city, case[1], {"violation_precinct": case[2]})
+            schema.fine_from_table(
+                city,
+                case[1],
+                {"violation_precinct": case[2], "violation_description": case[3]},
+            )
         )
         for case in fines
     ]
+    assert expected_fines[-2] is None and expected_fines[-1] == 65.0
     spans = [
         ("2025-06-30", "2025-06-30"),
         ("2025-07-01", "2025-07-01"),

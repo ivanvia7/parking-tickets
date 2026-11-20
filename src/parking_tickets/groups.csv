@@ -135,6 +135,9 @@ nyc,44,time_limit
 nyc,86,time_limit
 nyc,33,permit
 nyc,87,permit
+nyc,MTA CAMERA BUS STOP,bus_zone
+nyc,MTA CAMERA DOUBLE PARKING,double_parking
+nyc,MTA B&T WORK ZONE SPEED CAM,speed_camera
 philadelphia,METER EXPIRED CC,meter
 philadelphia,METER EXPIRED,meter
 philadelphia,OVER TIME LIMIT,time_limit
@@ -214,6 +217,47 @@ winnipeg,P01Meter Expired,meter
 winnipeg,P02Meter Overtime,meter
 winnipeg,P06-No Stopping,no_stopping
 winnipeg,MP06-No Stopping,no_stopping
+winnipeg,P06No Stop,no_stopping
+winnipeg,MP06-No Stop,no_stopping
+winnipeg,P03Rush Hour,no_stopping
+winnipeg,MP03-Rush Hour,no_stopping
+winnipeg,01Meter Expired,meter
+winnipeg,05Overtime,time_limit
+winnipeg,06No Stop,no_stopping
+winnipeg,03Rush Hour,no_stopping
+winnipeg,16No Park,no_parking
+winnipeg,13Fire Hydrant,hydrant
+winnipeg,12L/Z Overtime,loading_zone
+winnipeg,17Too close to a traffic sign,no_parking
+winnipeg,30Designated space,no_parking
+winnipeg,09Too close/in an intersection,crosswalk
+winnipeg,02Meter Overtime,meter
+winnipeg,19Crosswalk (MRKD/UNMRKD),crosswalk
+winnipeg,04Oversized Vehicle,no_parking
+winnipeg,M26-Fire Lane,hydrant
+winnipeg,14Improperly Parking,no_parking
+winnipeg,24Wrong Direction,no_parking
+winnipeg,20Parked on a Boulevard,sidewalk
+winnipeg,21Obstructing- vehicle,no_parking
+winnipeg,15Alley,no_parking
+winnipeg,18Side walk,sidewalk
+winnipeg,10Blocked driveway,driveway
+winnipeg,07Disabled L/Z,disabled
+winnipeg,11L/Z no activity,loading_zone
+winnipeg,M23-Double Parked,double_parking
+winnipeg,58Unplated/unregistered,registration
+winnipeg,MP25-Blocking bike/ped path,bike_lane
+winnipeg,MP69Annual Winter Route,no_parking
+winnipeg,64No Stop/Park in a taxi stand,no_stopping
+winnipeg,M06-No Stop,no_stopping
+winnipeg,M16-No Park,no_parking
+winnipeg,M24-Wrong Direction,no_parking
+winnipeg,26Fire Lane,hydrant
+winnipeg,M20-Parked on a Boulevard,sidewalk
+winnipeg,M25-Blocking bike/ped path,bike_lane
+winnipeg,23Double Parked,double_parking
+winnipeg,25Blocking bike/ped path,bike_lane
+winnipeg,MP11L/Z no activity,loading_zone
 winnipeg,P28No Prk/Stop St.Work/Spec.EVNT,no_stopping
 winnipeg,P64No Stop/Park in a taxi stand,no_stopping
 winnipeg,MP05- Overtime,time_limit

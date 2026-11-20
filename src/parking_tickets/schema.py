@@ -112,6 +112,8 @@ def code_entry(city: dict, fines: dict | None, row: dict) -> dict:
 
 def fine_from_table(city: dict, entry: dict, row: dict) -> str | None:
     lookup = city["fine_lookup"]
+    if row.get(lookup.get("no_fine_field", "")) in lookup.get("no_fine_values", []):
+        return None
     in_zone = row.get(lookup["zone_field"]) in lookup["zone_values"]
     # Socrata leaves out empty fields, so a code without an amount has no key.
     return entry.get(lookup["zone_amount_field"] if in_zone else lookup["amount_field"])
@@ -144,14 +146,15 @@ def to_ticket(city: dict, row: dict, fines: dict | None = None) -> Ticket:
     fine = fine_from_table(city, entry, row) if fines is not None else text("fine_usd")
     text_field = city.get("fine_lookup", {}).get("text_field")
     lat, lon = place(city, *coords(city, row))
+    violation_text = text("violation_text") or entry.get(text_field)
 
     return Ticket(
         city=city["slug"],
         source_id=required_text(row, col["source_id"]),
         issued_at=issued_at(city, row),
         violation_code=text("violation_code"),
-        violation_text=text("violation_text") or entry.get(text_field),
-        group=groups.group_of(city["slug"], text(groups.group_key(city))),
+        violation_text=violation_text,
+        group=groups.ticket_group(city, text(groups.group_key(city)), violation_text),
         fine_usd=number(fine),
         location=text("location"),
         lat=lat,
