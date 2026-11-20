@@ -103,6 +103,7 @@ def test_winnipeg_2024_spellings_are_grouped():
     # they held 19.7% of the month in `other` before these rows existed.
     for code in ("P06No Stop", "MP06-No Stop", "P03Rush Hour", "MP03-Rush Hour"):
         assert groups.group_of("winnipeg", code) == "no_stopping"
-    # Before about 2018 the same codes had no P: 2017 went from 0% to 85.6% grouped.
+    # Before about 2018 the same codes had no P: 2017 went from 0% to 88.5% grouped.
     assert groups.group_of("winnipeg", "01Meter Expired") == "meter"
     assert groups.group_of("winnipeg", "06No Stop") == "no_stopping"
+    assert groups.group_of("winnipeg", "M06-No Stop") == "no_stopping"

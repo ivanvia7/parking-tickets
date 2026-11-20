@@ -248,6 +248,15 @@ winnipeg,58Unplated/unregistered,registration
 winnipeg,MP25-Blocking bike/ped path,bike_lane
 winnipeg,MP69Annual Winter Route,no_parking
 winnipeg,64No Stop/Park in a taxi stand,no_stopping
+winnipeg,M06-No Stop,no_stopping
+winnipeg,M16-No Park,no_parking
+winnipeg,M24-Wrong Direction,no_parking
+winnipeg,26Fire Lane,hydrant
+winnipeg,M20-Parked on a Boulevard,sidewalk
+winnipeg,M25-Blocking bike/ped path,bike_lane
+winnipeg,23Double Parked,double_parking
+winnipeg,25Blocking bike/ped path,bike_lane
+winnipeg,MP11L/Z no activity,loading_zone
 winnipeg,P28No Prk/Stop St.Work/Spec.EVNT,no_stopping
 winnipeg,P64No Stop/Park in a taxi stand,no_stopping
 winnipeg,MP05- Overtime,time_limit
