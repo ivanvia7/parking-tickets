@@ -139,3 +139,15 @@ def test_row_description_wins_over_code_table_text():
     ticket = to_ticket(city, row, table)
     assert ticket.violation_text == "46A-Double Parking (Non-COM)"
     assert ticket.fine_usd == 115.0 and ticket.group == groups.group_of("nyc", "46")
+
+
+def test_bus_lane_camera_has_no_fine():
+    # Code 5 lists $250; summonses 4053271277 and 4053270546 paid $50 and $150.
+    city = cities.load("nyc")
+    table = {"5": {"definition": "BUS LANE VIOLATION", "all_other_areas": "250"}}
+    row = {
+        **ROWS[0],
+        "violation_code": "5",
+        "violation_description": "BUS LANE VIOLATION",
+    }
+    assert to_ticket(city, row, table).fine_usd is None

@@ -51,9 +51,15 @@ amount_field = "all_other_areas"
 zone_amount_field = "manhattan_96th_st_below"
 zone_field = "violation_precinct"
 # Known limit: Manhattan precincts at or below 96th St; 22 and 24 straddle 96th, upgrade is geocoding house number + street.
-# MTA camera tickets fine on their own scale, $50 and up for repeats, not the code table's
-# (code 12 lists $250; summons 5607338435 paid $50). The row has no amount, so the fine stays
-# empty. Hand-written MTA tickets keep the code table's fine (summons 1436914826: $115 both).
+# Bus lane and MTA cameras fine $50 to $250 by repeat count, not the code table's one amount
+# (code 5 lists $250; summonses 4053271277 and 4053270546 paid $50 and $150). The row has no
+# amount, so the fine stays empty. Hand-written MTA tickets keep the table fine (1436914826: $115).
 no_fine_field = "violation_description"
-no_fine_values = ["MTA CAMERA DOUBLE PARKING", "MTA CAMERA BUS STOP", "MOBILE BUS LANE VIOLATION"]
+no_fine_values = [
+    "MTA CAMERA DOUBLE PARKING",
+    "MTA CAMERA BUS STOP",
+    "MOBILE BUS LANE VIOLATION",
+    "BUS LANE VIOLATION",
+    "MTA B&T WORK ZONE SPEED CAM",
+]
 zone_values = ["1", "5", "6", "7", "9", "10", "13", "14", "17", "18", "19", "20", "22"]
