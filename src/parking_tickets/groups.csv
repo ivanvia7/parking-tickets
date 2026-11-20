@@ -216,6 +216,10 @@ winnipeg,P01Meter Expired,meter
 winnipeg,P02Meter Overtime,meter
 winnipeg,P06-No Stopping,no_stopping
 winnipeg,MP06-No Stopping,no_stopping
+winnipeg,P06No Stop,no_stopping
+winnipeg,MP06-No Stop,no_stopping
+winnipeg,P03Rush Hour,no_stopping
+winnipeg,MP03-Rush Hour,no_stopping
 winnipeg,P28No Prk/Stop St.Work/Spec.EVNT,no_stopping
 winnipeg,P64No Stop/Park in a taxi stand,no_stopping
 winnipeg,MP05- Overtime,time_limit
